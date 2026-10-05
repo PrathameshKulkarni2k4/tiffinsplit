@@ -39,7 +39,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
           <h1>Dashboard</h1>
           <p className="subtitle">{prettyMonth(month)}</p>
         </div>
-        <div className="row" style={{ gap: 12 }}>
+        <div className="page-actions">
           <MonthPicker month={month} />
           <Link href="/orders/new" className="btn primary">
             + Log a tiffin
