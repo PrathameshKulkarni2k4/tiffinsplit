@@ -77,7 +77,8 @@ tbody tr:last-child td { border-bottom: none; }
 .table-wrap { overflow-x: auto; }
 
 .btn {
-  display: inline-block; border: 1px solid var(--line); background: var(--card);
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); background: var(--card);
   color: var(--ink); padding: 9px 16px; border-radius: 10px; font: inherit;
   font-weight: 600; cursor: pointer; text-align: center;
 }
@@ -118,21 +119,24 @@ label.check input { width: auto; margin: 0; }
 /* ---------- Mobile ---------- */
 @media (max-width: 720px) {
   body { font-size: 15px; }
-  .container { padding: 16px 14px 104px; }   /* bottom space for the tab bar */
+  .container { padding: 16px 14px 108px; }   /* bottom space for the tab bar */
   h1 { font-size: 1.4rem; }
   h2 { font-size: 1.08rem; margin: 22px 0 8px; }
-  .card { padding: 14px; border-radius: 12px; }
-  .stat { padding: 14px; }
-  th, td { padding: 9px 8px; }
-  .btn { padding: 11px 16px; }
-  .btn.small { padding: 8px 12px; }
-  input, select, textarea { padding: 11px 12px; font-size: 16px; }
+  .card { padding: 16px; border-radius: 12px; }
+  .stat { padding: 15px 16px; }
+  th, td { padding: 10px 10px; }
+  .btn { padding: 12px 16px; min-height: 46px; }
+  .btn.small { padding: 9px 13px; min-height: 40px; }
+  input, select, textarea { padding: 12px; font-size: 16px; min-height: 46px; }
+  fieldset { border: none; padding: 0; margin: 0 0 14px; }
+  legend { padding: 0 0 6px; }
   .monthpicker { display: flex; width: 100%; justify-content: space-between; }
   .monthpicker input { flex: 1 1 auto; width: auto; }
   .desktop-only-block { display: none; }
   .mobile-only-block { display: block; }
-  .page-actions { display: flex; gap: 10px; width: 100%; }
-  .page-actions .btn { flex: 1; }
+  /* stack the month picker and the primary action so neither gets squeezed */
+  .page-actions { display: flex; flex-direction: column; align-items: stretch; gap: 10px; flex: 1 1 100%; width: 100%; }
+  .page-actions .btn { width: 100%; white-space: nowrap; }
 }
 
 /* ---------- Bottom tab bar (mobile only) ---------- */
@@ -145,12 +149,24 @@ label.check input { width: auto; margin: 0; }
     background: var(--card);
     border-top: 1px solid var(--line);
     z-index: 20;
-    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    padding: 4px 6px calc(4px + env(safe-area-inset-bottom, 0px));
   }
   .tab {
-    flex: 1; text-align: center; font-size: .7rem; font-weight: 600;
-    color: var(--muted); padding: 8px 2px; border-radius: 10px; line-height: 1.2;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 54px;              /* comfortable touch target (>= 44pt) */
+    padding: 6px 2px;
+    border-radius: 12px;
+    font-size: .7rem;
+    font-weight: 600;
+    color: var(--muted);
+    line-height: 1;
   }
-  .tab.active { color: var(--brand); }
+  .tab svg { width: 22px; height: 22px; display: block; }
+  .tab.active { color: var(--brand); background: #eef2ff; }
   .tab:hover { text-decoration: none; }
 }
