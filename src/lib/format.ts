@@ -31,3 +31,13 @@ export function prettyMonth(label: string): string {
     timeZone: "UTC",
   });
 }
+
+/** Today's date in India (IST) as YYYY-MM-DD, so "today" is the same on the server and the phone. */
+export function todayISO(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}

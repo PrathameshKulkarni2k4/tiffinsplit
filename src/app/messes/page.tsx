@@ -9,6 +9,11 @@ export default async function MessesPage() {
       <h1>Messes</h1>
       <p className="subtitle">Add messes and set their full and half tiffin prices.</p>
 
+      <p className="muted">
+        Changing a price only affects <strong>future</strong> orders. Orders already logged keep the
+        price they were entered at, so past bills never change.
+      </p>
+
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Add a mess</h2>
         <form action={createMess} className="form">

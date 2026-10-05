@@ -204,3 +204,65 @@ label.check input { width: auto; margin: 0; }
   form.form > .btn { width: 100%; }
   .form p.muted { margin: 12px 0 16px; }
 }
+
+/* ---------- Today screen ---------- */
+.datefield { display: block; margin-bottom: 14px; font-weight: 600; }
+.group { padding: 16px; }
+.grouphead { margin-bottom: 4px; }
+.grouphead select { width: auto; max-width: 60%; margin-top: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid var(--line); background: var(--card); color: var(--muted);
+  padding: 10px 14px; border-radius: 999px; font: inherit; font-weight: 600;
+  font-size: .9rem; cursor: pointer; min-height: 44px;
+}
+.chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.label {
+  font-size: .82rem; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--muted); font-weight: 700; margin: 16px 0 8px;
+}
+.seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button {
+  flex: 1; padding: 11px 8px; background: var(--card); border: none;
+  font: inherit; font-weight: 600; font-size: .86rem; color: var(--muted); cursor: pointer;
+}
+.seg button.on { background: var(--brand); color: #fff; }
+.split { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 10px; font-size: .92rem; }
+.split > div { display: flex; justify-content: space-between; padding: 3px 0; }
+.total-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 14px 4px 6px; font-weight: 700; font-size: 1.05rem;
+}
+.btn.big { width: 100%; min-height: 54px; font-size: 1.02rem; margin-top: 6px; }
+.addmess { width: 100%; }
+
+/* ---------- Focus, disabled, feedback ---------- */
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 8px; }
+button:disabled,
+.btn:disabled,
+.chip:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primary:disabled { background: #9db6ef; border-color: #9db6ef; }
+
+.warnbox {
+  background: #fff7e6; border: 1px solid #f0d9a8; color: #7c4a03;
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
+}
+.warnbox .check { margin-top: 8px; font-weight: 600; }
+
+.flash {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: #e8f5ec; border: 1px solid #bfe3ca; color: #14532d;
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; font-weight: 600;
+}
+
+/* ---------- Desktop breathing room ---------- */
+@media (min-width: 900px) {
+  .container { max-width: 1080px; }
+}
+
+.dash-cols { display: grid; }
+.dash-cols > section > h2 { margin-top: 28px; }
+@media (min-width: 900px) {
+  .dash-cols { grid-template-columns: 1fr 1fr; gap: 0 20px; margin-top: 28px; }
+  .dash-cols > section > h2 { margin-top: 0; }
+}

@@ -66,3 +66,16 @@ export async function deleteOrder(formData: FormData) {
 
   revalidateAll();
 }
+
+/** Undo a whole "Confirm today's lunch" batch. */
+export async function undoBatch(formData: FormData) {
+  const supabase = createClient();
+  const batch = String(formData.get("batch") || "");
+  if (!batch) throw new Error("Missing batch id.");
+
+  const { error } = await supabase.from("orders").delete().eq("batch_id", batch);
+  if (error) throw new Error(error.message);
+
+  revalidateAll();
+  redirect("/orders");
+}
