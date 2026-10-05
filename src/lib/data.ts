@@ -23,6 +23,17 @@ export function currentMonthLabel() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+/** The last `n` months, newest first, as "YYYY-MM" labels. */
+export function lastNMonths(n: number): string[] {
+  const now = new Date();
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    out.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
+  }
+  return out;
+}
+
 /** All orders (with mess name and shares) for a month. */
 export async function getMonthOrders(month?: string): Promise<OrderWithDetails[]> {
   const supabase = createClient();
@@ -63,6 +74,34 @@ export async function getMesses(activeOnly = true): Promise<Mess[]> {
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as Mess[];
+}
+
+/** Per-month order count and group total for the last `n` months (newest first). */
+export async function getMonthsSummary(n: number) {
+  const months = lastNMonths(n);
+  const { start } = monthRange(months[months.length - 1]);
+  const { end } = monthRange(months[0]);
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("orders")
+    .select("order_date, unit_price")
+    .gte("order_date", start)
+    .lte("order_date", end);
+  if (error) throw error;
+
+  const acc: Record<string, { orders: number; total: number }> = {};
+  for (const m of months) acc[m] = { orders: 0, total: 0 };
+
+  for (const o of data ?? []) {
+    const m = String(o.order_date).slice(0, 7);
+    if (acc[m]) {
+      acc[m].orders += 1;
+      acc[m].total = Math.round((acc[m].total + Number(o.unit_price)) * 100) / 100;
+    }
+  }
+
+  return months.map((m) => ({ month: m, orders: acc[m].orders, total: acc[m].total }));
 }
 
 /** A lookup of user id -> display name, for rendering lists. */

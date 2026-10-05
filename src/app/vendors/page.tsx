@@ -1,6 +1,7 @@
 import { getMonthOrders, getMesses, currentMonthLabel } from "@/lib/data";
 import { perMess, grandTotal } from "@/lib/aggregate";
-import { money, prettyMonth } from "@/lib/format";
+import { money } from "@/lib/format";
+import MonthPicker from "@/components/MonthPicker";
 
 type SearchParams = { month?: string };
 
@@ -19,8 +20,13 @@ export default async function VendorsPage({ searchParams }: { searchParams?: Sea
 
   return (
     <>
-      <h1>Messes owed</h1>
-      <p className="subtitle">{prettyMonth(month)} — what the group owes each mess</p>
+      <div className="row">
+        <div>
+          <h1>Messes owed</h1>
+          <p className="subtitle">What the group owes each mess this month</p>
+        </div>
+        <MonthPicker month={month} />
+      </div>
 
       {rows.length === 0 ? (
         <div className="card">

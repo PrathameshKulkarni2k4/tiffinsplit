@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMonthOrders, getMembers, nameMap, currentMonthLabel } from "@/lib/data";
-import { money, prettyDate, prettyMonth } from "@/lib/format";
+import { money, prettyDate } from "@/lib/format";
+import MonthPicker from "@/components/MonthPicker";
 import { deleteOrder } from "./actions";
 
 type SearchParams = { month?: string };
@@ -24,11 +25,14 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
       <div className="row">
         <div>
           <h1>Orders</h1>
-          <p className="subtitle">{prettyMonth(month)}</p>
+          <p className="subtitle">Every tiffin logged this month</p>
         </div>
-        <Link href="/orders/new" className="btn primary">
-          + Log a tiffin
-        </Link>
+        <div className="row" style={{ gap: 12 }}>
+          <MonthPicker month={month} />
+          <Link href="/orders/new" className="btn primary">
+            + Log a tiffin
+          </Link>
+        </div>
       </div>
 
       {orders.length === 0 ? (
