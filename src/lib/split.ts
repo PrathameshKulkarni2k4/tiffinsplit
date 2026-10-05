@@ -1,0 +1,94 @@
+import { splitEqually, round2 } from "./billing";
+
+export type SplitMode = "pairs" | "all-half";
+
+export type PlannedOrder = {
+  tiffin_type: "full" | "half";
+  unit_price: number;
+  sharers: string[];
+};
+
+export type Plan = {
+  orders: PlannedOrder[];
+  /** true when the group is an odd size in pairs mode and no one has been picked for the half yet */
+  needsHalfPick: boolean;
+};
+
+/**
+ * Turn "who is eating from this mess" into the actual tiffins to log.
+ *
+ *  pairs    - people pair up and share a full tiffin. If there is an odd one out,
+ *             that person takes a half on their own.
+ *  all-half - everyone takes their own half tiffin.
+ *
+ * The app never decides *who* takes the half: that is a real ₹ difference, so the
+ * caller must name them (oddUserId). Until then the plan reports needsHalfPick.
+ */
+export function planGroup(
+  present: string[],
+  fullPrice: number,
+  halfPrice: number,
+  mode: SplitMode,
+  oddUserId?: string | null
+): Plan {
+  const people = [...present];
+  if (people.length === 0) return { orders: [], needsHalfPick: false };
+
+  if (mode === "all-half") {
+    return {
+      orders: people.map((u) => ({
+        tiffin_type: "half" as const,
+        unit_price: halfPrice,
+        sharers: [u],
+      })),
+      needsHalfPick: false,
+    };
+  }
+
+  // pairs mode
+  const orders: PlannedOrder[] = [];
+
+  if (people.length % 2 === 0) {
+    for (let i = 0; i < people.length; i += 2) {
+      orders.push({
+        tiffin_type: "full",
+        unit_price: fullPrice,
+        sharers: [people[i], people[i + 1]],
+      });
+    }
+    return { orders, needsHalfPick: false };
+  }
+
+  // odd size: someone has to take the half, and only a human can say who
+  if (!oddUserId || !people.includes(oddUserId)) {
+    return { orders: [], needsHalfPick: true };
+  }
+
+  const rest = people.filter((u) => u !== oddUserId);
+  for (let i = 0; i < rest.length; i += 2) {
+    orders.push({
+      tiffin_type: "full",
+      unit_price: fullPrice,
+      sharers: [rest[i], rest[i + 1]],
+    });
+  }
+  orders.push({ tiffin_type: "half", unit_price: halfPrice, sharers: [oddUserId] });
+
+  return { orders, needsHalfPick: false };
+}
+
+/** What the group will be billed in total (sum of the planned tiffin prices). */
+export function planTotal(orders: PlannedOrder[]): number {
+  return round2(orders.reduce((sum, o) => sum + o.unit_price, 0));
+}
+
+/** What each person owes under a plan. */
+export function planPerPerson(orders: PlannedOrder[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const o of orders) {
+    for (const s of splitEqually(o.unit_price, o.sharers)) {
+      out[s.userId] = round2((out[s.userId] ?? 0) + s.amount);
+    }
+  }
+  return out;
+}

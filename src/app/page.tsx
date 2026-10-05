@@ -38,8 +38,8 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
         </div>
         <div className="page-actions">
           <MonthPicker month={month} />
-          <Link href="/orders/new" className="btn primary">
-            + Log a tiffin
+          <Link href="/today" className="btn primary">
+            Log today&apos;s lunch
           </Link>
         </div>
       </div>
