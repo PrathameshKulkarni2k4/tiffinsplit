@@ -1,18 +1,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/auth";
 import { prettyDate } from "@/lib/format";
 import { setActive, setRole } from "./actions";
 
 export default async function MembersPage() {
+  const profile = await getProfile();
+  if (!profile || profile.role !== "admin" || !profile.is_active) redirect("/");
+
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: me } = await supabase.from("users").select("role, is_active").eq("id", user.id).single();
-  if (!me || me.role !== "admin" || !me.is_active) redirect("/");
-
   const { data: users } = await supabase
     .from("users")
     .select("id, email, full_name, role, is_active, created_at")
@@ -79,7 +75,7 @@ export default async function MembersPage() {
           </thead>
           <tbody>
             {active.map((u) => {
-              const isMe = u.id === user.id;
+              const isMe = u.id === profile.id;
               return (
                 <tr key={u.id}>
                   <td>

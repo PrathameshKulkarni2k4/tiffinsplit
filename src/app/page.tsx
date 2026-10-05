@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/auth";
 import {
   getMonthOrders,
   getMembers,
@@ -14,12 +14,9 @@ import MonthPicker from "@/components/MonthPicker";
 type SearchParams = { month?: string };
 
 export default async function DashboardPage({ searchParams }: { searchParams?: SearchParams }) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getSessionUser();
   const month = typeof searchParams?.month === "string" ? searchParams.month : currentMonthLabel();
+
   const [orders, members, summary] = await Promise.all([
     getMonthOrders(month),
     getMembers(),

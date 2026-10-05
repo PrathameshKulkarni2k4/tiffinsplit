@@ -167,6 +167,40 @@ label.check input { width: auto; margin: 0; }
     line-height: 1;
   }
   .tab svg { width: 22px; height: 22px; display: block; }
-  .tab.active { color: var(--brand); background: #eef2ff; }
+  .tab.active { color: var(--brand-dark); background: #e8eeff; }
   .tab:hover { text-decoration: none; }
+}
+
+/* ---------- Loading skeleton ---------- */
+.loading { padding-top: 6px; }
+.skel {
+  background: linear-gradient(90deg, #e9edf5 25%, #f3f6fb 37%, #e9edf5 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  border-radius: 12px;
+}
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+.skel-title { height: 30px; width: 45%; margin-bottom: 10px; }
+.skel-sub { height: 15px; width: 30%; margin-bottom: 20px; }
+.skel-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.skel-stat { height: 78px; }
+.skel-card { height: 140px; margin-bottom: 16px; }
+
+/* ---------- Form polish on mobile ---------- */
+@media (max-width: 720px) {
+  label.check {
+    min-height: 46px;
+    margin: 0;
+    padding: 0 2px;
+    line-height: 1.2;
+    border-bottom: 1px solid var(--line);
+  }
+  label.check:last-of-type { border-bottom: none; }
+  label.check input { width: 22px; height: 22px; flex: 0 0 auto; }
+  fieldset { margin-bottom: 18px; }
+  form.form > .btn { width: 100%; }
+  .form p.muted { margin: 12px 0 16px; }
 }
