@@ -1,22 +1,11 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/auth";
 import TabBar from "@/components/TabBar";
 
 export default async function Nav() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
+  const profile = await getProfile();
 
   // No navigation until the user has been approved.
-  const { data: profile } = await supabase
-    .from("users")
-    .select("role, is_active")
-    .eq("id", user.id)
-    .maybeSingle();
-
   if (!profile || !profile.is_active) return null;
 
   const isAdmin = profile.role === "admin";
