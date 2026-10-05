@@ -1,6 +1,7 @@
 import { getMonthOrders, getMembers, getMesses, nameMap, currentMonthLabel } from "@/lib/data";
 import { perPerson, grandTotal } from "@/lib/aggregate";
-import { money, prettyMonth } from "@/lib/format";
+import { money } from "@/lib/format";
+import MonthPicker from "@/components/MonthPicker";
 
 type SearchParams = { month?: string };
 
@@ -31,8 +32,13 @@ export default async function BillsPage({ searchParams }: { searchParams?: Searc
 
   return (
     <>
-      <h1>Bills</h1>
-      <p className="subtitle">{prettyMonth(month)} — what each person owes</p>
+      <div className="row">
+        <div>
+          <h1>Bills</h1>
+          <p className="subtitle">What each person owes</p>
+        </div>
+        <MonthPicker month={month} />
+      </div>
 
       {members.map((m) => {
         const entries = Object.entries(matrix[m.id] ?? {});

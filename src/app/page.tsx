@@ -1,17 +1,30 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getMonthOrders, getMembers, nameMap, currentMonthLabel } from "@/lib/data";
+import {
+  getMonthOrders,
+  getMembers,
+  getMonthsSummary,
+  nameMap,
+  currentMonthLabel,
+} from "@/lib/data";
 import { perPerson, grandTotal } from "@/lib/aggregate";
 import { money, prettyMonth, prettyDate } from "@/lib/format";
+import MonthPicker from "@/components/MonthPicker";
 
-export default async function DashboardPage() {
+type SearchParams = { month?: string };
+
+export default async function DashboardPage({ searchParams }: { searchParams?: SearchParams }) {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const month = currentMonthLabel();
-  const [orders, members] = await Promise.all([getMonthOrders(month), getMembers()]);
+  const month = typeof searchParams?.month === "string" ? searchParams.month : currentMonthLabel();
+  const [orders, members, summary] = await Promise.all([
+    getMonthOrders(month),
+    getMembers(),
+    getMonthsSummary(6),
+  ]);
   const names = nameMap(members);
 
   const dues = perPerson(orders);
@@ -26,9 +39,12 @@ export default async function DashboardPage() {
           <h1>Dashboard</h1>
           <p className="subtitle">{prettyMonth(month)}</p>
         </div>
-        <Link href="/orders/new" className="btn primary">
-          + Log a tiffin
-        </Link>
+        <div className="row" style={{ gap: 12 }}>
+          <MonthPicker month={month} />
+          <Link href="/orders/new" className="btn primary">
+            + Log a tiffin
+          </Link>
+        </div>
       </div>
 
       <div className="grid">
@@ -69,11 +85,35 @@ export default async function DashboardPage() {
         </table>
       </div>
 
+      <h2>Month by month</h2>
+      <div className="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th className="num">Orders</th>
+              <th className="num">Group total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {summary.map((s) => (
+              <tr key={s.month}>
+                <td>
+                  <Link href={`/?month=${s.month}`}>{prettyMonth(s.month)}</Link>
+                </td>
+                <td className="num">{s.orders}</td>
+                <td className="num amount">{money(s.total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       <h2>Recent orders</h2>
       {recent.length === 0 ? (
         <div className="card">
           <p className="muted">
-            No orders yet this month. <Link href="/orders/new">Log the first tiffin.</Link>
+            No orders in this month. <Link href="/orders/new">Log a tiffin.</Link>
           </p>
         </div>
       ) : (

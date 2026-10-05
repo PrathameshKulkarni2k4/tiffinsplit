@@ -101,3 +101,17 @@ label.check input { width: auto; margin: 0; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .inline { display: inline; }
 .amount { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.monthpicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--muted);
+}
+.monthpicker input {
+  width: auto;
+  margin-top: 0;
+  padding: 7px 10px;
+}
