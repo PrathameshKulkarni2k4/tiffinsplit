@@ -59,7 +59,9 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
         </div>
       </div>
 
-      <h2>Everyone this month</h2>
+      <div className="dash-cols">
+        <section>
+          <h2>Everyone this month</h2>
       <div className="card table-wrap">
         <table>
           <thead>
@@ -81,8 +83,10 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
           </tbody>
         </table>
       </div>
+        </section>
 
-      <h2>Month by month</h2>
+        <section>
+          <h2>Month by month</h2>
       <div className="card table-wrap">
         <table>
           <thead>
@@ -104,6 +108,9 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
             ))}
           </tbody>
         </table>
+      </div>
+
+        </section>
       </div>
 
       <h2>Recent orders</h2>

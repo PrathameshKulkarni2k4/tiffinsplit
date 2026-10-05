@@ -16,11 +16,11 @@ function Icon({ name }: { name: string }) {
   };
 
   switch (name) {
-    case "home":
+    case "today":
       return (
         <svg {...common}>
-          <path d="M3 10.5 12 3l9 7.5" />
-          <path d="M5.5 9.5V20h13V9.5" />
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8v8M8 12h8" />
         </svg>
       );
     case "orders":
@@ -55,7 +55,7 @@ function Icon({ name }: { name: string }) {
 }
 
 const TABS = [
-  { href: "/", label: "Home", icon: "home" },
+  { href: "/today", label: "Today", icon: "today" },
   { href: "/orders", label: "Orders", icon: "orders" },
   { href: "/bills", label: "Bills", icon: "bills" },
   { href: "/vendors", label: "Owed", icon: "owed" },
@@ -67,9 +67,9 @@ export default function TabBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="tabbar">
+    <nav className="tabbar" aria-label="Main">
       {TABS.map((t) => {
-        const active = t.href === "/" ? pathname === "/" : pathname.startsWith(t.href);
+        const active = pathname === t.href || pathname.startsWith(t.href + "/");
         return (
           <Link key={t.href} href={t.href} className={`tab${active ? " active" : ""}`}>
             <Icon name={t.icon} />

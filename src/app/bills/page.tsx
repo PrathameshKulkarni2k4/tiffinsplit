@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getMonthOrders, getMembers, getMesses, nameMap, currentMonthLabel } from "@/lib/data";
 import { perPerson, grandTotal } from "@/lib/aggregate";
 import { money } from "@/lib/format";
@@ -45,7 +46,9 @@ export default async function BillsPage({ searchParams }: { searchParams?: Searc
         return (
           <div className="card" key={m.id}>
             <div className="row">
-              <strong>{names[m.id]}</strong>
+              <Link href={`/bills/${m.id}?month=${month}`}>
+                <strong>{names[m.id]}</strong>
+              </Link>
               <span className="amount">{money(totals[m.id] ?? 0)}</span>
             </div>
             {entries.length > 0 ? (

@@ -9,6 +9,7 @@ import { planGroup, type SplitMode } from "@/lib/split";
 
 type Payload = {
   date: string;
+  allowDuplicate?: boolean;
   groups: { messId: string; mode: SplitMode; present: string[]; oddUser: string | null }[];
 };
 
@@ -36,11 +37,26 @@ export async function logToday(formData: FormData) {
   }
 
   const supabase = createClient();
+  const messIds = groups.map((g) => g.messId);
+
+  // Guard against logging the same day twice by accident.
+  if (!payload.allowDuplicate) {
+    const { data: existing, error: dupErr } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("order_date", payload.date)
+      .in("mess_id", messIds)
+      .limit(1);
+    if (dupErr) throw new Error(dupErr.message);
+    if (existing && existing.length > 0) {
+      throw new Error('There are already orders for that date and mess. Tick "Add anyway" to log them again.');
+    }
+  }
 
   const { data: messRows, error: messErr } = await supabase
     .from("messes")
     .select("id, full_price, half_price")
-    .in("id", groups.map((g) => g.messId));
+    .in("id", messIds);
   if (messErr) throw new Error(messErr.message);
 
   const priceById: Record<string, { full: number; half: number }> = {};
@@ -48,6 +64,7 @@ export async function logToday(formData: FormData) {
     priceById[m.id] = { full: Number(m.full_price), half: Number(m.half_price) };
   }
 
+  const batchId = crypto.randomUUID();
   const orderRows: Record<string, unknown>[] = [];
   const shareRows: Record<string, unknown>[] = [];
 
@@ -67,6 +84,7 @@ export async function logToday(formData: FormData) {
         tiffin_type: o.tiffin_type,
         unit_price: o.unit_price,
         created_by: user.id,
+        batch_id: batchId,
       });
       for (const s of splitEqually(o.unit_price, o.sharers)) {
         shareRows.push({ order_id: orderId, user_id: s.userId, share_amount: s.amount });
@@ -84,5 +102,6 @@ export async function logToday(formData: FormData) {
   revalidatePath("/orders");
   revalidatePath("/bills");
   revalidatePath("/vendors");
-  redirect("/orders");
+
+  redirect(`/orders?logged=${orderRows.length}&batch=${batchId}`);
 }

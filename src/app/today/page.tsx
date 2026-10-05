@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import { getMesses, getMembers } from "@/lib/data";
+import { todayISO } from "@/lib/format";
 import TodayForm from "./TodayForm";
 
 export default async function TodayPage() {
@@ -15,10 +17,15 @@ export default async function TodayPage() {
     );
   }
 
+  // Which messes already have orders logged today? Used to warn about double-logging.
+  const supabase = createClient();
+  const { data } = await supabase.from("orders").select("mess_id").eq("order_date", todayISO());
+  const todayMesses = Array.from(new Set((data ?? []).map((o) => o.mess_id as string)));
+
   return (
     <>
       <h1>Today</h1>
-      <TodayForm messes={messes} members={members} />
+      <TodayForm messes={messes} members={members} todayMesses={todayMesses} />
     </>
   );
 }

@@ -2,16 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { planGroup, planTotal, type PlannedOrder, type SplitMode } from "@/lib/split";
-import { money } from "@/lib/format";
+import { money, todayISO } from "@/lib/format";
 import type { AppUser, Mess } from "@/lib/types";
+import SubmitButton from "@/components/SubmitButton";
 import { logToday } from "./actions";
 
 type Group = { messId: string; present: string[]; mode: SplitMode; oddUser: string | null };
-
-function localToday() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 
 function summaryLines(orders: PlannedOrder[]) {
   const lines: { label: string; amount: string }[] = [];
@@ -32,8 +28,17 @@ function summaryLines(orders: PlannedOrder[]) {
   return lines;
 }
 
-export default function TodayForm({ messes, members }: { messes: Mess[]; members: AppUser[] }) {
-  const [date, setDate] = useState(localToday());
+export default function TodayForm({
+  messes,
+  members,
+  todayMesses,
+}: {
+  messes: Mess[];
+  members: AppUser[];
+  todayMesses: string[];
+}) {
+  const [date, setDate] = useState(todayISO());
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
   const [groups, setGroups] = useState<Group[]>([
     { messId: messes[0]?.id ?? "", present: members.map((m) => m.id), mode: "pairs", oddUser: null },
   ]);
@@ -96,9 +101,17 @@ export default function TodayForm({ messes, members }: { messes: Mess[]; members
     );
   });
 
+  const isToday = date === todayISO();
+  const clashing = isToday
+    ? groups.filter((g) => g.present.length > 0 && todayMesses.includes(g.messId))
+    : [];
+  const hasClash = clashing.length > 0;
+  const clashNames = clashing.map((g) => messOf[g.messId]?.name ?? "a mess").join(", ");
+
   const valid = groups.every((g, i) => g.present.length > 0 && !plans[i].needsHalfPick);
+  const canConfirm = valid && (!hasClash || allowDuplicate);
   const grand = plans.reduce((sum, p) => sum + planTotal(p.orders), 0);
-  const payload = JSON.stringify({ date, groups });
+  const payload = JSON.stringify({ date, allowDuplicate, groups });
 
   return (
     <form action={logToday} className="today-form">
@@ -108,6 +121,20 @@ export default function TodayForm({ messes, members }: { messes: Mess[]; members
         Date
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       </label>
+
+      {hasClash && (
+        <div className="warnbox">
+          <strong>Already logged today for {clashNames}.</strong>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={allowDuplicate}
+              onChange={(e) => setAllowDuplicate(e.target.checked)}
+            />
+            I know — add these anyway
+          </label>
+        </div>
+      )}
 
       {groups.map((g, gi) => {
         const plan = plans[gi];
@@ -136,6 +163,7 @@ export default function TodayForm({ messes, members }: { messes: Mess[]; members
                 <button
                   key={m.id}
                   type="button"
+                  aria-pressed={g.present.includes(m.id)}
                   className={`chip${g.present.includes(m.id) ? " on" : ""}`}
                   onClick={() => toggle(gi, m.id)}
                 >
@@ -148,6 +176,7 @@ export default function TodayForm({ messes, members }: { messes: Mess[]; members
             <div className="seg">
               <button
                 type="button"
+                aria-pressed={g.mode === "pairs"}
                 className={g.mode === "pairs" ? "on" : ""}
                 onClick={() => patch(gi, { mode: "pairs" })}
               >
@@ -155,6 +184,7 @@ export default function TodayForm({ messes, members }: { messes: Mess[]; members
               </button>
               <button
                 type="button"
+                aria-pressed={g.mode === "all-half"}
                 className={g.mode === "all-half" ? "on" : ""}
                 onClick={() => patch(gi, { mode: "all-half" })}
               >
@@ -193,6 +223,7 @@ export default function TodayForm({ messes, members }: { messes: Mess[]; members
                     <button
                       key={uid}
                       type="button"
+                      aria-pressed={g.oddUser === uid}
                       className={`chip${g.oddUser === uid ? " on" : ""}`}
                       onClick={() => patch(gi, { oddUser: uid })}
                     >
@@ -204,7 +235,12 @@ export default function TodayForm({ messes, members }: { messes: Mess[]; members
             )}
 
             {groups.length > 1 && (
-              <button type="button" className="btn small" onClick={() => removeGroup(gi)} style={{ marginTop: 12 }}>
+              <button
+                type="button"
+                className="btn small"
+                onClick={() => removeGroup(gi)}
+                style={{ marginTop: 12 }}
+              >
                 Remove this mess
               </button>
             )}
@@ -226,9 +262,9 @@ export default function TodayForm({ messes, members }: { messes: Mess[]; members
         <span className="amount">{money(grand)}</span>
       </div>
 
-      <button className="btn primary big" type="submit" disabled={!valid}>
+      <SubmitButton pendingLabel="Saving…" disabled={!canConfirm}>
         Confirm today&apos;s lunch
-      </button>
+      </SubmitButton>
       <p className="muted" style={{ textAlign: "center" }}>
         Need something different? <a href="/orders/new">Add tiffins manually</a>
       </p>

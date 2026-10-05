@@ -3,9 +3,9 @@ import { getSessionUser } from "@/lib/auth";
 import { getMonthOrders, getMembers, nameMap, currentMonthLabel } from "@/lib/data";
 import { money, prettyDate } from "@/lib/format";
 import MonthPicker from "@/components/MonthPicker";
-import { deleteOrder } from "./actions";
+import { deleteOrder, undoBatch } from "./actions";
 
-type SearchParams = { month?: string };
+type SearchParams = { month?: string; logged?: string; batch?: string };
 
 export default async function OrdersPage({ searchParams }: { searchParams?: SearchParams }) {
   const month = typeof searchParams?.month === "string" ? searchParams.month : currentMonthLabel();
@@ -32,6 +32,22 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
           </Link>
         </div>
       </div>
+
+      {typeof searchParams?.logged === "string" && (
+        <div className="flash">
+          <span>
+            Logged {searchParams.logged} tiffin{searchParams.logged === "1" ? "" : "s"} today.
+          </span>
+          {typeof searchParams?.batch === "string" && (
+            <form action={undoBatch}>
+              <input type="hidden" name="batch" value={searchParams.batch} />
+              <button className="btn small" type="submit">
+                Undo
+              </button>
+            </form>
+          )}
+        </div>
+      )}
 
       {orders.length === 0 ? (
         <div className="card">
