@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import TabBar from "@/components/TabBar";
 
 export default async function Nav() {
   const supabase = createClient();
@@ -18,24 +19,36 @@ export default async function Nav() {
 
   if (!profile || !profile.is_active) return null;
 
+  const isAdmin = profile.role === "admin";
+
   return (
-    <header className="nav">
-      <Link href="/" className="brand">
-        TiffinSplit
-      </Link>
-      <nav className="nav-links">
-        <Link href="/">Dashboard</Link>
-        <Link href="/orders">Orders</Link>
-        <Link href="/bills">Bills</Link>
-        <Link href="/vendors">Messes owed</Link>
-        <Link href="/messes">Messes</Link>
-        {profile.role === "admin" && <Link href="/members">Members</Link>}
-        <form action="/auth/signout" method="post">
-          <button type="submit" className="link-btn">
-            Sign out
-          </button>
-        </form>
-      </nav>
-    </header>
+    <>
+      <header className="topbar">
+        <Link href="/" className="brand">
+          TiffinSplit
+        </Link>
+        <nav className="topbar-nav">
+          <Link href="/orders" className="desktop-only">
+            Orders
+          </Link>
+          <Link href="/bills" className="desktop-only">
+            Bills
+          </Link>
+          <Link href="/vendors" className="desktop-only">
+            Messes owed
+          </Link>
+          <Link href="/messes" className="desktop-only">
+            Messes
+          </Link>
+          {isAdmin && <Link href="/members">Members</Link>}
+          <form action="/auth/signout" method="post">
+            <button type="submit" className="link-btn">
+              Sign out
+            </button>
+          </form>
+        </nav>
+      </header>
+      <TabBar />
+    </>
   );
 }

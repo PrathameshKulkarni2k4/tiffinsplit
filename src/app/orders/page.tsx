@@ -20,6 +20,8 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
   const me = members.find((m) => m.id === user?.id);
   const isAdmin = me?.role === "admin";
 
+  const canDelete = (createdBy: string) => createdBy === user?.id || isAdmin;
+
   return (
     <>
       <div className="row">
@@ -27,7 +29,7 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
           <h1>Orders</h1>
           <p className="subtitle">Every tiffin logged this month</p>
         </div>
-        <div className="row" style={{ gap: 12 }}>
+        <div className="page-actions">
           <MonthPicker month={month} />
           <Link href="/orders/new" className="btn primary">
             + Log a tiffin
@@ -42,23 +44,23 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
           </p>
         </div>
       ) : (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Mess</th>
-                <th>Portion</th>
-                <th className="num">Price</th>
-                <th>Split between</th>
-                <th>Logged by</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((o) => {
-                const canDelete = o.created_by === user?.id || isAdmin;
-                return (
+        <>
+          {/* Desktop: table */}
+          <div className="card table-wrap desktop-only-block">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Mess</th>
+                  <th>Portion</th>
+                  <th className="num">Price</th>
+                  <th>Split between</th>
+                  <th>Logged by</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
                   <tr key={o.id}>
                     <td>{prettyDate(o.order_date)}</td>
                     <td>{o.messes?.name ?? "—"}</td>
@@ -73,7 +75,7 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
                     </td>
                     <td className="muted">{names[o.created_by] ?? "—"}</td>
                     <td className="num">
-                      {canDelete && (
+                      {canDelete(o.created_by) && (
                         <form action={deleteOrder}>
                           <input type="hidden" name="id" value={o.id} />
                           <button className="btn small danger" type="submit">
@@ -83,11 +85,41 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
                       )}
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile: cards */}
+          <div className="mobile-only-block">
+            {orders.map((o) => (
+              <div className="card" key={o.id}>
+                <div className="row">
+                  <span className="muted">{prettyDate(o.order_date)}</span>
+                  <span className={`pill ${o.tiffin_type}`}>{o.tiffin_type}</span>
+                  <span className="amount">{money(o.unit_price)}</span>
+                </div>
+                <div style={{ fontWeight: 600, marginTop: 6 }}>{o.messes?.name ?? "—"}</div>
+                <div className="muted" style={{ marginTop: 2 }}>
+                  {(o.order_shares ?? [])
+                    .map((s) => `${names[s.user_id] ?? "—"} ${money(s.share_amount)}`)
+                    .join(" · ")}
+                </div>
+                <div className="row" style={{ marginTop: 10 }}>
+                  <span className="muted">Logged by {names[o.created_by] ?? "—"}</span>
+                  {canDelete(o.created_by) && (
+                    <form action={deleteOrder}>
+                      <input type="hidden" name="id" value={o.id} />
+                      <button className="btn small danger" type="submit">
+                        Delete
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </>
   );
