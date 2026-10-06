@@ -12,26 +12,48 @@ export default async function Nav() {
 
   return (
     <>
-      <header className="topbar">
-        <Link href="/" className="brand">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-card px-[18px] py-3">
+        <Link href="/" className="text-[1.1rem] font-bold text-foreground hover:no-underline">
           TiffinSplit
         </Link>
-        <nav className="topbar-nav">
-          <Link href="/orders" className="desktop-only">
+        <nav className="flex flex-wrap items-center gap-4">
+          <Link
+            href="/orders"
+            className="hidden text-[0.95rem] font-medium text-foreground hover:no-underline md:inline"
+          >
             Orders
           </Link>
-          <Link href="/bills" className="desktop-only">
+          <Link
+            href="/bills"
+            className="hidden text-[0.95rem] font-medium text-foreground hover:no-underline md:inline"
+          >
             Bills
           </Link>
-          <Link href="/vendors" className="desktop-only">
+          <Link
+            href="/vendors"
+            className="hidden text-[0.95rem] font-medium text-foreground hover:no-underline md:inline"
+          >
             Messes owed
           </Link>
-          <Link href="/messes" className="desktop-only">
+          <Link
+            href="/messes"
+            className="hidden text-[0.95rem] font-medium text-foreground hover:no-underline md:inline"
+          >
             Messes
           </Link>
-          {isAdmin && <Link href="/members">Members</Link>}
+          {isAdmin && (
+            <Link
+              href="/members"
+              className="text-[0.95rem] font-medium text-foreground hover:no-underline"
+            >
+              Members
+            </Link>
+          )}
           <form action="/auth/signout" method="post">
-            <button type="submit" className="link-btn">
+            <button
+              type="submit"
+              className="cursor-pointer border-0 bg-transparent p-0 font-medium text-muted-foreground hover:text-foreground"
+            >
               Sign out
             </button>
           </form>

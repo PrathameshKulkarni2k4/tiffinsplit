@@ -1,3 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------
+   shadcn/ui theme tokens.
+
+   These are derived from the app's own palette below (--bg, --ink,
+   --brand, ...), converted to the HSL triplets shadcn expects, so
+   shadcn components match the existing look rather than introducing a
+   second visual language.
+
+   They carry a `--ui-` prefix because the palette below already uses
+   --card, --muted, --good and --warn for its own hex values — the same
+   names shadcn wants, with incompatible value formats. Namespacing
+   avoids renaming every existing rule.
+   ------------------------------------------------------------------ */
+:root {
+  --ui-background: 222.9 46.7% 97.1%;
+  --ui-foreground: 220.8 32.5% 15.1%;
+  --ui-card: 0 0% 100%;
+  --ui-card-foreground: 220.8 32.5% 15.1%;
+  --ui-popover: 0 0% 100%;
+  --ui-popover-foreground: 220.8 32.5% 15.1%;
+  --ui-primary: 221.2 83.2% 53.3%;
+  --ui-primary-foreground: 0 0% 100%;
+  --ui-secondary: 225.9 100% 96.7%;
+  --ui-secondary-foreground: 224.3 76.3% 48%;
+  --ui-muted: 220 36% 95.1%;
+  --ui-muted-foreground: 220 8.9% 46.1%;
+  --ui-accent: 224.3 100% 95.5%;
+  --ui-accent-foreground: 224.3 76.3% 48%;
+  --ui-destructive: 0 73.7% 41.8%;
+  --ui-destructive-foreground: 0 0% 100%;
+  --ui-border: 222 23.8% 91.8%;
+  --ui-input: 222 23.8% 91.8%;
+  --ui-ring: 221.2 83.2% 53.3%;
+  --ui-radius: 0.625rem;
+  --ui-good: 142.4 71.8% 29.2%;
+  --ui-warn: 26 90.5% 37.1%;
+}
+
 :root {
   --bg: #f4f6fb;
   --card: #ffffff;
