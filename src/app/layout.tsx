@@ -1,6 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import Nav from "@/components/Nav";
+import AxeDev from "@/components/AxeDev";
 
 export const metadata: Metadata = {
   title: "TiffinSplit",
@@ -13,6 +15,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Nav />
         <main className="container">{children}</main>
+        <SpeedInsights />
+        <AxeDev />
       </body>
     </html>
   );
