@@ -3,6 +3,17 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth";
 import { prettyDate } from "@/lib/format";
 import { setActive, setRole } from "./actions";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default async function MembersPage() {
   const profile = await getProfile();
@@ -21,95 +32,107 @@ export default async function MembersPage() {
   return (
     <>
       <h1>Members</h1>
-      <p className="subtitle">Approve new sign-ins and manage roles.</p>
+      <p className="mb-5 text-muted-foreground">Approve new sign-ins and manage roles.</p>
 
       <h2>Pending approval ({pending.length})</h2>
       {pending.length === 0 ? (
-        <div className="card">
-          <p className="muted">No one is waiting to be approved.</p>
-        </div>
+        <Card className="px-5 py-[18px]">
+          <p className="m-0 text-sm text-muted-foreground">No one is waiting to be approved.</p>
+        </Card>
       ) : (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Requested</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
+        <Card className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Requested</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {pending.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.full_name ?? "—"}</td>
-                  <td>{u.email}</td>
-                  <td className="muted">{prettyDate(u.created_at.slice(0, 10))}</td>
-                  <td className="num">
+                <TableRow key={u.id}>
+                  <TableCell>{u.full_name ?? "—"}</TableCell>
+                  <TableCell>{u.email}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {prettyDate(u.created_at.slice(0, 10))}
+                  </TableCell>
+                  <TableCell className="text-right">
                     <form action={setActive}>
                       <input type="hidden" name="id" value={u.id} />
                       <input type="hidden" name="is_active" value="true" />
-                      <button className="btn small primary" type="submit">
+                      <Button type="submit" size="sm">
                         Approve
-                      </button>
+                      </Button>
                     </form>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
       <h2>Active members ({active.length})</h2>
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th></th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card className="overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead />
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {active.map((u) => {
               const isMe = u.id === profile.id;
               return (
-                <tr key={u.id}>
-                  <td>
+                <TableRow key={u.id}>
+                  <TableCell>
                     {u.full_name ?? "—"}
                     {isMe ? " (you)" : ""}
-                  </td>
-                  <td>{u.email}</td>
-                  <td>
-                    <span className="pill">{u.role}</span>
-                  </td>
-                  <td className="num">
+                  </TableCell>
+                  <TableCell>{u.email}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{u.role}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
                     <form action={setRole}>
                       <input type="hidden" name="id" value={u.id} />
-                      <input type="hidden" name="role" value={u.role === "admin" ? "member" : "admin"} />
-                      <button className="btn small" type="submit" disabled={isMe}>
+                      <input
+                        type="hidden"
+                        name="role"
+                        value={u.role === "admin" ? "member" : "admin"}
+                      />
+                      <Button type="submit" variant="outline" size="sm" disabled={isMe}>
                         {u.role === "admin" ? "Make member" : "Make admin"}
-                      </button>
+                      </Button>
                     </form>
-                  </td>
-                  <td className="num">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <form action={setActive}>
                       <input type="hidden" name="id" value={u.id} />
                       <input type="hidden" name="is_active" value="false" />
-                      <button className="btn small danger" type="submit" disabled={isMe}>
+                      <Button
+                        type="submit"
+                        variant="outline"
+                        size="sm"
+                        disabled={isMe}
+                        className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      >
                         Deactivate
-                      </button>
+                      </Button>
                     </form>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
     </>
   );
 }

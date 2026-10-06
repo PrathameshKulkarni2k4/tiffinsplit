@@ -3,17 +3,18 @@ import { createClient } from "@/lib/supabase/server";
 import { getMesses, getMembers } from "@/lib/data";
 import { todayISO } from "@/lib/format";
 import TodayForm from "./TodayForm";
+import { Card } from "@/components/ui/card";
 
 export default async function TodayPage() {
   const [messes, members] = await Promise.all([getMesses(true), getMembers()]);
 
   if (messes.length === 0) {
     return (
-      <div className="card">
-        <p>
+      <Card className="px-5 py-[18px]">
+        <p className="m-0">
           No messes yet. <Link href="/messes">Add a mess first.</Link>
         </p>
-      </div>
+      </Card>
     );
   }
 

@@ -3,6 +3,16 @@ import { notFound } from "next/navigation";
 import { getMonthOrders, getMembers, nameMap, currentMonthLabel } from "@/lib/data";
 import { money, prettyDate, prettyMonth } from "@/lib/format";
 import MonthPicker from "@/components/MonthPicker";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type SearchParams = { month?: string };
 
@@ -30,60 +40,70 @@ export default async function PersonBillPage({
 
   return (
     <>
-      <div className="row">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1>{names[person.id]}</h1>
-          <p className="subtitle">{prettyMonth(month)} · what they owe, order by order</p>
+          <p className="mb-5 text-muted-foreground">
+            {prettyMonth(month)} · what they owe, order by order
+          </p>
         </div>
         <MonthPicker month={month} />
       </div>
 
-      <div className="card row">
+      <Card className="mb-[18px] flex flex-wrap items-center justify-between gap-3 px-5 py-[18px]">
         <strong>Total this month</strong>
-        <span className="amount">{money(total)}</span>
-      </div>
+        <span className="font-semibold tabular-nums">{money(total)}</span>
+      </Card>
 
       {rows.length === 0 ? (
-        <div className="card">
-          <p className="muted">No orders for {names[person.id]} this month.</p>
-        </div>
+        <Card className="px-5 py-[18px]">
+          <p className="m-0 text-sm text-muted-foreground">
+            No orders for {names[person.id]} this month.
+          </p>
+        </Card>
       ) : (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Mess</th>
-                <th>Portion</th>
-                <th className="num">Tiffin</th>
-                <th>Shared with</th>
-                <th className="num">Their share</th>
-              </tr>
-            </thead>
-            <tbody>
+        <Card className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Mess</TableHead>
+                <TableHead>Portion</TableHead>
+                <TableHead className="text-right">Tiffin</TableHead>
+                <TableHead>Shared with</TableHead>
+                <TableHead className="text-right">Their share</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.map(({ order, amount }) => {
                 const others = (order.order_shares ?? []).filter((s) => s.user_id !== params.userId);
                 return (
-                  <tr key={order.id}>
-                    <td>{prettyDate(order.order_date)}</td>
-                    <td>{order.messes?.name ?? "—"}</td>
-                    <td>
-                      <span className={`pill ${order.tiffin_type}`}>{order.tiffin_type}</span>
-                    </td>
-                    <td className="num amount">{money(order.unit_price)}</td>
-                    <td className="muted">
+                  <TableRow key={order.id}>
+                    <TableCell>{prettyDate(order.order_date)}</TableCell>
+                    <TableCell>{order.messes?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant={order.tiffin_type === "half" ? "warn" : "secondary"}>
+                        {order.tiffin_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">
+                      {money(order.unit_price)}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
                       {others.length ? others.map((s) => names[s.user_id] ?? "—").join(", ") : "alone"}
-                    </td>
-                    <td className="num amount">{money(amount)}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">
+                      {money(amount)}
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
-      <p className="muted">
+      <p className="text-sm text-muted-foreground">
         <Link href={`/bills?month=${month}`}>← Back to Bills</Link>
       </p>
     </>

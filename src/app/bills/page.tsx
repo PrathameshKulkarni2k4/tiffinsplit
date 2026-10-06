@@ -3,6 +3,13 @@ import { getMonthOrders, getMembers, getMesses, nameMap, currentMonthLabel } fro
 import { perPerson, grandTotal } from "@/lib/aggregate";
 import { money } from "@/lib/format";
 import MonthPicker from "@/components/MonthPicker";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
 
 type SearchParams = { month?: string };
 
@@ -33,10 +40,10 @@ export default async function BillsPage({ searchParams }: { searchParams?: Searc
 
   return (
     <>
-      <div className="row">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1>Bills</h1>
-          <p className="subtitle">What each person owes</p>
+          <p className="mb-5 text-muted-foreground">What each person owes</p>
         </div>
         <MonthPicker month={month} />
       </div>
@@ -44,35 +51,39 @@ export default async function BillsPage({ searchParams }: { searchParams?: Searc
       {members.map((m) => {
         const entries = Object.entries(matrix[m.id] ?? {});
         return (
-          <div className="card" key={m.id}>
-            <div className="row">
-              <Link href={`/bills/${m.id}?month=${month}`}>
-                <strong>{names[m.id]}</strong>
+          <Card key={m.id} className="mb-[18px] px-5 py-[18px]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Link href={`/bills/${m.id}?month=${month}`} className="font-bold">
+                {names[m.id]}
               </Link>
-              <span className="amount">{money(totals[m.id] ?? 0)}</span>
+              <span className="font-semibold tabular-nums">{money(totals[m.id] ?? 0)}</span>
             </div>
             {entries.length > 0 ? (
-              <table>
-                <tbody>
+              <Table className="mt-1">
+                <TableBody>
                   {entries.map(([messId, amt]) => (
-                    <tr key={messId}>
-                      <td className="muted">{messNames[messId] ?? "—"}</td>
-                      <td className="num amount">{money(amt)}</td>
-                    </tr>
+                    <TableRow key={messId}>
+                      <TableCell className="px-0 text-sm text-muted-foreground">
+                        {messNames[messId] ?? "—"}
+                      </TableCell>
+                      <TableCell className="px-0 text-right font-semibold tabular-nums">
+                        {money(amt)}
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             ) : (
-              <p className="muted">No orders this month.</p>
+              <p className="mt-1 text-sm text-muted-foreground">No orders this month.</p>
             )}
-          </div>
+          </Card>
         );
       })}
 
-      <div className="card row">
+      <Card className="flex flex-wrap items-center justify-between gap-3 px-5 py-[18px]">
         <strong>Group total</strong>
-        <span className="amount">{money(total)}</span>
-      </div>
+        <span className="font-semibold tabular-nums">{money(total)}</span>
+      </Card>
     </>
   );
 }

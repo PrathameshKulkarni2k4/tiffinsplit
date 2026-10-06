@@ -3,6 +3,17 @@
 import { useEffect, useState } from "react";
 import { createOrder } from "./actions";
 import type { AppUser, Mess } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+// The app is mobile-first, so fields keep a comfortable touch height on small
+// screens and relax to the tighter desktop sizing above the 721px breakpoint.
+const FIELD = "min-h-[46px] text-base md:min-h-0";
+const SELECT =
+  "mt-1.5 flex min-h-[46px] w-full rounded-md border border-input bg-card px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-0";
 
 export default function OrderForm({ messes, members }: { messes: Mess[]; members: AppUser[] }) {
   const [messId, setMessId] = useState(messes[0]?.id ?? "");
@@ -24,74 +35,99 @@ export default function OrderForm({ messes, members }: { messes: Mess[]; members
   }
 
   return (
-    <form action={createOrder} className="card form">
-      <label>
-        Date
-        <input type="date" name="order_date" defaultValue={new Date().toISOString().slice(0, 10)} required />
-      </label>
+    <Card className="px-5 py-[18px] max-md:px-4">
+      <form action={createOrder} className="space-y-1">
+        <Label className="mb-3 block font-semibold">
+          Date
+          <Input
+            type="date"
+            name="order_date"
+            defaultValue={new Date().toISOString().slice(0, 10)}
+            required
+            className={FIELD}
+          />
+        </Label>
 
-      <label>
-        Mess
-        <select name="mess_id" value={messId} onChange={(e) => setMessId(e.target.value)} required>
-          {messes.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
+        <Label className="mb-3 block font-semibold">
+          Mess
+          <select
+            name="mess_id"
+            value={messId}
+            onChange={(e) => setMessId(e.target.value)}
+            required
+            className={SELECT}
+          >
+            {messes.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </Label>
+
+        <Label className="mb-3 block font-semibold">
+          Portion
+          <select
+            name="tiffin_type"
+            value={type}
+            onChange={(e) => setType(e.target.value as "full" | "half")}
+            className={SELECT}
+          >
+            <option value="full">Full</option>
+            <option value="half">Half</option>
+          </select>
+        </Label>
+
+        <Label className="mb-3 block font-semibold">
+          Price (₹)
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            name="unit_price"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            required
+            className={FIELD}
+          />
+        </Label>
+
+        <fieldset className="mb-3 rounded-lg border px-3.5 py-2.5 max-md:border-0 max-md:p-0">
+          <legend className="px-1.5 font-semibold max-md:px-0 max-md:pb-1.5">Who shared it?</legend>
+          {members.map((m) => (
+            <div
+              key={m.id}
+              className="flex min-h-[46px] items-center gap-2.5 max-md:border-b max-md:last:border-b-0"
+            >
+              <Checkbox
+                id={`sharer-${m.id}`}
+                name="sharers"
+                value={m.id}
+                checked={selected.includes(m.id)}
+                onCheckedChange={() => toggle(m.id)}
+              />
+              <label htmlFor={`sharer-${m.id}`} className="cursor-pointer font-normal">
+                {m.full_name || m.email}
+              </label>
+            </div>
           ))}
-        </select>
-      </label>
+        </fieldset>
 
-      <label>
-        Portion
-        <select name="tiffin_type" value={type} onChange={(e) => setType(e.target.value as "full" | "half")}>
-          <option value="full">Full</option>
-          <option value="half">Half</option>
-        </select>
-      </label>
+        <p className="mb-3 mt-3 text-sm text-muted-foreground">
+          {n > 0
+            ? `≈ ${each.toFixed(2)} each — the exact split (to the paise) is applied when you save.`
+            : "Select at least one person."}
+        </p>
 
-      <label>
-        Price (₹)
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          name="unit_price"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          required
-        />
-      </label>
+        <Label className="mb-3 block font-semibold">
+          Notes
+          <Input type="text" name="notes" placeholder="optional" className={FIELD} />
+        </Label>
 
-      <fieldset>
-        <legend>Who shared it?</legend>
-        {members.map((m) => (
-          <label key={m.id} className="check">
-            <input
-              type="checkbox"
-              name="sharers"
-              value={m.id}
-              checked={selected.includes(m.id)}
-              onChange={() => toggle(m.id)}
-            />
-            {m.full_name || m.email}
-          </label>
-        ))}
-      </fieldset>
-
-      <p className="muted">
-        {n > 0
-          ? `≈ ${each.toFixed(2)} each — the exact split (to the paise) is applied when you save.`
-          : "Select at least one person."}
-      </p>
-
-      <label>
-        Notes
-        <input type="text" name="notes" placeholder="optional" />
-      </label>
-
-      <button className="btn primary" type="submit" disabled={n === 0}>
-        Save order
-      </button>
-    </form>
+        <Button type="submit" disabled={n === 0} className="w-full max-md:min-h-[46px]">
+          Save order
+        </Button>
+      </form>
+    </Card>
   );
 }

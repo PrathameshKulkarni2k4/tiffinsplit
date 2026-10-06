@@ -5,6 +5,11 @@ import { planGroup, planTotal, type PlannedOrder, type SplitMode } from "@/lib/s
 import { money, todayISO } from "@/lib/format";
 import type { AppUser, Mess } from "@/lib/types";
 import SubmitButton from "@/components/SubmitButton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 import { logToday } from "./actions";
 
 type Group = { messId: string; present: string[]; mode: SplitMode; oddUser: string | null };
@@ -28,6 +33,10 @@ function summaryLines(orders: PlannedOrder[]) {
   return lines;
 }
 
+const LABEL = "mb-2 mt-4 text-[0.82rem] font-bold uppercase tracking-wide text-muted-foreground";
+const SELECT =
+  "rounded-md border border-input bg-card px-2.5 py-2 text-sm font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
 export default function TodayForm({
   messes,
   members,
@@ -40,7 +49,12 @@ export default function TodayForm({
   const [date, setDate] = useState(todayISO());
   const [allowDuplicate, setAllowDuplicate] = useState(false);
   const [groups, setGroups] = useState<Group[]>([
-    { messId: messes[0]?.id ?? "", present: members.map((m) => m.id), mode: "pairs", oddUser: null },
+    {
+      messId: messes[0]?.id ?? "",
+      present: members.map((m) => m.id),
+      mode: "pairs",
+      oddUser: null,
+    },
   ]);
 
   const nameOf = useMemo(() => {
@@ -114,26 +128,35 @@ export default function TodayForm({
   const payload = JSON.stringify({ date, allowDuplicate, groups });
 
   return (
-    <form action={logToday} className="today-form">
+    <form action={logToday}>
       <input type="hidden" name="payload" value={payload} />
 
-      <label className="datefield">
+      <label className="mb-3.5 block font-semibold">
         Date
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="mt-1.5 flex min-h-[46px] w-full rounded-md border border-input bg-card px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
       </label>
 
       {hasClash && (
-        <div className="warnbox">
-          <strong>Already logged today for {clashNames}.</strong>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={allowDuplicate}
-              onChange={(e) => setAllowDuplicate(e.target.checked)}
-            />
-            I know — add these anyway
-          </label>
-        </div>
+        <Alert variant="warning" className="mb-4">
+          <AlertTitle>Already logged today for {clashNames}.</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 flex min-h-[46px] items-center gap-2.5 font-semibold">
+              <Checkbox
+                id="allow-duplicate"
+                checked={allowDuplicate}
+                onCheckedChange={(v) => setAllowDuplicate(v === true)}
+              />
+              <label htmlFor="allow-duplicate" className="cursor-pointer">
+                I know — add these anyway
+              </label>
+            </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {groups.map((g, gi) => {
@@ -141,12 +164,13 @@ export default function TodayForm({
         const oddNeeded = g.mode === "pairs" && g.present.length > 0 && g.present.length % 2 === 1;
 
         return (
-          <div className="card group" key={gi}>
-            <div className="row grouphead">
+          <Card className="mb-[18px] px-4 py-4" key={gi}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <select
                 value={g.messId}
                 onChange={(e) => patch(gi, { messId: e.target.value })}
                 aria-label="Mess"
+                className={cn(SELECT, "w-auto max-w-[60%]")}
               >
                 {messes.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -154,30 +178,43 @@ export default function TodayForm({
                   </option>
                 ))}
               </select>
-              <span className="muted">{g.present.length} eating</span>
+              <span className="text-sm text-muted-foreground">{g.present.length} eating</span>
             </div>
 
-            <div className="label">Who&apos;s eating from here?</div>
-            <div className="chips">
-              {members.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  aria-pressed={g.present.includes(m.id)}
-                  className={`chip${g.present.includes(m.id) ? " on" : ""}`}
-                  onClick={() => toggle(gi, m.id)}
-                >
-                  {nameOf[m.id]}
-                </button>
-              ))}
+            <div className={LABEL}>Who&apos;s eating from here?</div>
+            <div className="flex flex-wrap gap-2">
+              {members.map((m) => {
+                const on = g.present.includes(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    aria-pressed={on}
+                    className={cn(
+                      "min-h-[44px] rounded-full border px-3.5 py-2.5 text-[0.9rem] font-semibold transition-colors",
+                      on
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-muted-foreground hover:border-input",
+                    )}
+                    onClick={() => toggle(gi, m.id)}
+                  >
+                    {nameOf[m.id]}
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="label">How are we splitting?</div>
-            <div className="seg">
+            <div className={LABEL}>How are we splitting?</div>
+            <div className="flex overflow-hidden rounded-lg border">
               <button
                 type="button"
                 aria-pressed={g.mode === "pairs"}
-                className={g.mode === "pairs" ? "on" : ""}
+                className={cn(
+                  "flex-1 px-2 py-[11px] text-[0.86rem] font-semibold",
+                  g.mode === "pairs"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground",
+                )}
                 onClick={() => patch(gi, { mode: "pairs" })}
               >
                 Pairs share a full
@@ -185,7 +222,12 @@ export default function TodayForm({
               <button
                 type="button"
                 aria-pressed={g.mode === "all-half"}
-                className={g.mode === "all-half" ? "on" : ""}
+                className={cn(
+                  "flex-1 px-2 py-[11px] text-[0.86rem] font-semibold",
+                  g.mode === "all-half"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground",
+                )}
                 onClick={() => patch(gi, { mode: "all-half" })}
               >
                 All take a half
@@ -193,79 +235,95 @@ export default function TodayForm({
             </div>
 
             {g.present.length === 0 ? (
-              <p className="muted">Pick who&apos;s eating from this mess.</p>
+              <p className="text-sm text-muted-foreground">
+                Pick who&apos;s eating from this mess.
+              </p>
             ) : (
-              <div className="split">
+              <div className="mt-3.5 border-t pt-2.5 text-[0.92rem]">
                 {plan.orders.length > 0 ? (
                   <>
                     {summaryLines(plan.orders).map((l, i) => (
-                      <div key={i}>
+                      <div key={i} className="flex justify-between py-[3px]">
                         <span>{l.label}</span>
-                        <span className="amount">{l.amount}</span>
+                        <span className="font-semibold tabular-nums">{l.amount}</span>
                       </div>
                     ))}
-                    <div style={{ paddingTop: 6 }}>
-                      <span className="muted">Group total</span>
-                      <span className="amount">{money(planTotal(plan.orders))}</span>
+                    <div className="flex justify-between py-[3px] pt-1.5">
+                      <span className="text-sm text-muted-foreground">Group total</span>
+                      <span className="font-semibold tabular-nums">
+                        {money(planTotal(plan.orders))}
+                      </span>
                     </div>
                   </>
                 ) : (
-                  <p className="muted">Choose who&apos;s taking the half below.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Choose who&apos;s taking the half below.
+                  </p>
                 )}
               </div>
             )}
 
             {oddNeeded && (
               <>
-                <div className="label">Who&apos;s taking the half?</div>
-                <div className="chips">
-                  {g.present.map((uid) => (
-                    <button
-                      key={uid}
-                      type="button"
-                      aria-pressed={g.oddUser === uid}
-                      className={`chip${g.oddUser === uid ? " on" : ""}`}
-                      onClick={() => patch(gi, { oddUser: uid })}
-                    >
-                      {nameOf[uid]}
-                    </button>
-                  ))}
+                <div className={LABEL}>Who&apos;s taking the half?</div>
+                <div className="flex flex-wrap gap-2">
+                  {g.present.map((uid) => {
+                    const on = g.oddUser === uid;
+                    return (
+                      <button
+                        key={uid}
+                        type="button"
+                        aria-pressed={on}
+                        className={cn(
+                          "min-h-[44px] rounded-full border px-3.5 py-2.5 text-[0.9rem] font-semibold transition-colors",
+                          on
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-muted-foreground hover:border-input",
+                        )}
+                        onClick={() => patch(gi, { oddUser: uid })}
+                      >
+                        {nameOf[uid]}
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
 
             {groups.length > 1 && (
-              <button
+              <Button
                 type="button"
-                className="btn small"
+                variant="outline"
+                size="sm"
+                className="mt-3"
                 onClick={() => removeGroup(gi)}
-                style={{ marginTop: 12 }}
               >
                 Remove this mess
-              </button>
+              </Button>
             )}
-          </div>
+          </Card>
         );
       })}
 
-      <button
+      <Button
         type="button"
-        className="btn addmess"
+        variant="outline"
+        className="w-full"
         onClick={addGroup}
         disabled={groups.length >= messes.length}
       >
         + Add another mess
-      </button>
+      </Button>
 
-      <div className="total-row">
+      <div className="flex items-baseline justify-between px-1 pb-1.5 pt-3.5 text-[1.05rem] font-bold">
         <span>Total today</span>
-        <span className="amount">{money(grand)}</span>
+        <span className="font-semibold tabular-nums">{money(grand)}</span>
       </div>
 
       <SubmitButton pendingLabel="Saving…" disabled={!canConfirm}>
         Confirm today&apos;s lunch
       </SubmitButton>
-      <p className="muted" style={{ textAlign: "center" }}>
+      <p className="text-center text-sm text-muted-foreground">
         Need something different? <a href="/orders/new">Add tiffins manually</a>
       </p>
     </form>

@@ -2,6 +2,16 @@ import { getMonthOrders, getMesses, currentMonthLabel } from "@/lib/data";
 import { perMess, grandTotal } from "@/lib/aggregate";
 import { money } from "@/lib/format";
 import MonthPicker from "@/components/MonthPicker";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type SearchParams = { month?: string };
 
@@ -20,46 +30,52 @@ export default async function VendorsPage({ searchParams }: { searchParams?: Sea
 
   return (
     <>
-      <div className="row">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1>Messes owed</h1>
-          <p className="subtitle">What the group owes each mess this month</p>
+          <p className="mb-5 text-muted-foreground">
+            What the group owes each mess this month
+          </p>
         </div>
         <MonthPicker month={month} />
       </div>
 
       {rows.length === 0 ? (
-        <div className="card">
-          <p className="muted">No orders this month yet.</p>
-        </div>
+        <Card className="px-5 py-[18px]">
+          <p className="m-0 text-sm text-muted-foreground">No orders this month yet.</p>
+        </Card>
       ) : (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Mess</th>
-                <th className="num">Orders</th>
-                <th className="num">Amount owed</th>
-              </tr>
-            </thead>
-            <tbody>
+        <Card className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mess</TableHead>
+                <TableHead className="text-right">Orders</TableHead>
+                <TableHead className="text-right">Amount owed</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.name}</td>
-                  <td className="num">{r.orders}</td>
-                  <td className="num amount">{money(r.total)}</td>
-                </tr>
+                <TableRow key={r.id}>
+                  <TableCell>{r.name}</TableCell>
+                  <TableCell className="text-right tabular-nums">{r.orders}</TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {money(r.total)}
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <th>Total</th>
-                <th className="num">{orders.length}</th>
-                <th className="num amount">{money(grandTotal(orders))}</th>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableHead>Total</TableHead>
+                <TableHead className="text-right">{orders.length}</TableHead>
+                <TableHead className="text-right font-semibold tabular-nums">
+                  {money(grandTotal(orders))}
+                </TableHead>
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </Card>
       )}
     </>
   );

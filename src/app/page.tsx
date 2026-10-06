@@ -10,8 +10,30 @@ import {
 import { perPerson, grandTotal } from "@/lib/aggregate";
 import { money, prettyMonth, prettyDate } from "@/lib/format";
 import MonthPicker from "@/components/MonthPicker";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type SearchParams = { month?: string };
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <Card className="px-[18px] py-4">
+      <div className="text-[0.82rem] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-2xl font-bold">{value}</div>
+    </Card>
+  );
+}
 
 export default async function DashboardPage({ searchParams }: { searchParams?: SearchParams }) {
   const user = await getSessionUser();
@@ -31,120 +53,118 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
 
   return (
     <>
-      <div className="row">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1>Dashboard</h1>
-          <p className="subtitle">{prettyMonth(month)}</p>
+          <p className="mb-5 text-muted-foreground">{prettyMonth(month)}</p>
         </div>
-        <div className="page-actions">
+        <div className="flex w-full flex-col items-stretch gap-2.5 sm:w-auto sm:flex-row sm:items-center">
           <MonthPicker month={month} />
-          <Link href="/today" className="btn primary">
-            Log today&apos;s lunch
-          </Link>
+          <Button asChild>
+            <Link href="/today">Log today&apos;s lunch</Link>
+          </Button>
         </div>
       </div>
 
-      <div className="grid">
-        <div className="stat">
-          <div className="label">My dues this month</div>
-          <div className="value">{money(mine)}</div>
-        </div>
-        <div className="stat">
-          <div className="label">Group total</div>
-          <div className="value">{money(total)}</div>
-        </div>
-        <div className="stat">
-          <div className="label">Orders logged</div>
-          <div className="value">{orders.length}</div>
-        </div>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
+        <Stat label="My dues this month" value={money(mine)} />
+        <Stat label="Group total" value={money(total)} />
+        <Stat label="Orders logged" value={String(orders.length)} />
       </div>
 
-      <div className="dash-cols">
+      <div className="lg:mt-7 lg:grid lg:grid-cols-2 lg:gap-x-5">
         <section>
-          <h2>Everyone this month</h2>
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Member</th>
-              <th className="num">Dues</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((m) => (
-              <tr key={m.id}>
-                <td>
-                  {names[m.id]}
-                  {m.id === user?.id ? " (you)" : ""}
-                </td>
-                <td className="num amount">{money(dues[m.id] ?? 0)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          <h2 className="lg:mt-0">Everyone this month</h2>
+          <Card className="overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Member</TableHead>
+                  <TableHead className="text-right">Dues</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {members.map((m) => (
+                  <TableRow key={m.id}>
+                    <TableCell>
+                      {names[m.id]}
+                      {m.id === user?.id ? " (you)" : ""}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">
+                      {money(dues[m.id] ?? 0)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
         </section>
 
         <section>
           <h2>Month by month</h2>
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Month</th>
-              <th className="num">Orders</th>
-              <th className="num">Group total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {summary.map((s) => (
-              <tr key={s.month}>
-                <td>
-                  <Link href={`/?month=${s.month}`}>{prettyMonth(s.month)}</Link>
-                </td>
-                <td className="num">{s.orders}</td>
-                <td className="num amount">{money(s.total)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
+          <Card className="overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Month</TableHead>
+                  <TableHead className="text-right">Orders</TableHead>
+                  <TableHead className="text-right">Group total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {summary.map((s) => (
+                  <TableRow key={s.month}>
+                    <TableCell>
+                      <Link href={`/?month=${s.month}`}>{prettyMonth(s.month)}</Link>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{s.orders}</TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">
+                      {money(s.total)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
         </section>
       </div>
 
       <h2>Recent orders</h2>
       {recent.length === 0 ? (
-        <div className="card">
-          <p className="muted">
+        <Card className="px-5 py-[18px]">
+          <p className="m-0 text-sm text-muted-foreground">
             No orders in this month. <Link href="/orders/new">Log a tiffin.</Link>
           </p>
-        </div>
+        </Card>
       ) : (
-        <div className="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Mess</th>
-                <th>Portion</th>
-                <th className="num">Price</th>
-              </tr>
-            </thead>
-            <tbody>
+        <Card className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Mess</TableHead>
+                <TableHead>Portion</TableHead>
+                <TableHead className="text-right">Price</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {recent.map((o) => (
-                <tr key={o.id}>
-                  <td>{prettyDate(o.order_date)}</td>
-                  <td>{o.messes?.name ?? "—"}</td>
-                  <td>
-                    <span className={`pill ${o.tiffin_type}`}>{o.tiffin_type}</span>
-                  </td>
-                  <td className="num amount">{money(o.unit_price)}</td>
-                </tr>
+                <TableRow key={o.id}>
+                  <TableCell>{prettyDate(o.order_date)}</TableCell>
+                  <TableCell>{o.messes?.name ?? "—"}</TableCell>
+                  <TableCell>
+                    <Badge variant={o.tiffin_type === "half" ? "warn" : "secondary"}>
+                      {o.tiffin_type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {money(o.unit_price)}
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </>
   );

@@ -14,7 +14,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Nav />
-        <main className="container">{children}</main>
+        {/* Page shell: 960px wide, widening to 1080px on desktop, with extra
+            bottom padding on mobile to clear the fixed tab bar. */}
+        <main className="mx-auto max-w-[960px] px-5 pb-16 pt-6 max-md:px-3.5 max-md:pb-[108px] max-md:pt-4 lg:max-w-[1080px]">
+          {children}
+        </main>
         <SpeedInsights />
         <AxeDev />
       </body>
