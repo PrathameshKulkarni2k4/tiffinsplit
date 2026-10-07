@@ -10,10 +10,9 @@
    shadcn components match the existing look rather than introducing a
    second visual language.
 
-   They carry a `--ui-` prefix because the palette below already uses
-   --card, --muted, --good and --warn for its own hex values — the same
-   names shadcn wants, with incompatible value formats. Namespacing
-   avoids renaming every existing rule.
+   They carry a `--ui-` prefix because the palette below uses --card,
+   --muted, --good and --warn for its own hex values — the same names
+   shadcn wants, with incompatible value formats.
    ------------------------------------------------------------------ */
 :root {
   --ui-background: 222.9 46.7% 97.1%;
@@ -40,20 +39,25 @@
   --ui-warn: 26 90.5% 37.1%;
 }
 
+/* ------------------------------------------------------------------
+   App palette.
+
+   The per-screen classes that used to consume these (`.card`, `.btn`,
+   `.chip`, ...) are gone — every screen now styles itself with Tailwind
+   utilities and the shadcn components in src/components/ui. What remains
+   here are the base document styles and the two colours they reference.
+   ------------------------------------------------------------------ */
 :root {
   --bg: #f4f6fb;
-  --card: #ffffff;
   --ink: #1a2233;
-  --muted: #6b7280;
-  --line: #e5e8ef;
   --brand: #2563eb;
-  --brand-dark: #1d4ed8;
-  --good: #15803d;
-  --warn: #b45309;
 }
 
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
 
 body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -64,247 +68,44 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
-a { color: var(--brand); text-decoration: none; }
-a:hover { text-decoration: underline; }
-
-/* ---------- Top bar ---------- */
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 18px;
-  background: var(--card);
-  border-bottom: 1px solid var(--line);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-.brand { font-weight: 700; font-size: 1.1rem; color: var(--ink); }
-.brand:hover { text-decoration: none; }
-.topbar-nav { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.topbar-nav a { color: var(--ink); font-weight: 500; font-size: .95rem; }
-.link-btn {
-  background: none; border: none; padding: 0; cursor: pointer;
-  color: var(--muted); font: inherit; font-weight: 500;
-}
-.link-btn:hover { color: var(--ink); }
-
-/* ---------- Layout ---------- */
-.container { max-width: 960px; margin: 0 auto; padding: 24px 20px 64px; }
-
-h1 { font-size: 1.6rem; margin: 8px 0 4px; }
-h2 { font-size: 1.2rem; margin: 28px 0 10px; }
-.subtitle { color: var(--muted); margin: 0 0 20px; }
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 18px 20px;
-  margin: 0 0 18px;
-}
-.card.center { max-width: 420px; margin: 80px auto; text-align: center; }
-
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
-.stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
-.stat .label { color: var(--muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; }
-.stat .value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
-
-table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-size: .82rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-tbody tr:last-child td { border-bottom: none; }
-.table-wrap { overflow-x: auto; }
-
-.btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--line); background: var(--card);
-  color: var(--ink); padding: 9px 16px; border-radius: 10px; font: inherit;
-  font-weight: 600; cursor: pointer; text-align: center;
-}
-.btn:hover { border-color: #cbd2e0; }
-.btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
-.btn.primary:hover { background: var(--brand-dark); }
-.btn.small { padding: 6px 11px; font-size: .85rem; }
-.btn.danger { color: #b91c1c; border-color: #f0c8c8; }
-
-form.form label { display: block; margin-bottom: 12px; font-weight: 600; }
-input, select, textarea {
-  width: 100%; padding: 9px 11px; border: 1px solid var(--line);
-  border-radius: 10px; font: inherit; margin-top: 5px; background: #fff; color: var(--ink);
-}
-fieldset { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin: 0 0 12px; }
-legend { font-weight: 600; padding: 0 6px; }
-label.check { display: flex; align-items: center; gap: 9px; font-weight: 400; margin: 6px 0; }
-label.check input { width: auto; margin: 0; }
-
-.muted { color: var(--muted); font-size: .9rem; }
-.pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .78rem; font-weight: 600; background: #eef2ff; color: var(--brand-dark); }
-.pill.half { background: #fef3c7; color: var(--warn); }
-.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.inline { display: inline; }
-.amount { font-variant-numeric: tabular-nums; font-weight: 600; }
-
-.monthpicker { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: .9rem; color: var(--muted); }
-.monthpicker input { width: auto; margin-top: 0; padding: 7px 10px; }
-
-/* ---------- Responsive utilities ---------- */
-.desktop-only { display: none; }
-.desktop-only-block { display: block; }
-.mobile-only-block { display: none; }
-@media (min-width: 721px) {
-  .desktop-only { display: inline; }
-}
-
-/* ---------- Mobile ---------- */
 @media (max-width: 720px) {
-  body { font-size: 15px; }
-  .container { padding: 16px 14px 108px; }   /* bottom space for the tab bar */
-  h1 { font-size: 1.4rem; }
-  h2 { font-size: 1.08rem; margin: 22px 0 8px; }
-  .card { padding: 16px; border-radius: 12px; }
-  .stat { padding: 15px 16px; }
-  th, td { padding: 10px 10px; }
-  .btn { padding: 12px 16px; min-height: 46px; }
-  .btn.small { padding: 9px 13px; min-height: 40px; }
-  input, select, textarea { padding: 12px; font-size: 16px; min-height: 46px; }
-  fieldset { border: none; padding: 0; margin: 0 0 14px; }
-  legend { padding: 0 0 6px; }
-  .monthpicker { display: flex; width: 100%; justify-content: space-between; }
-  .monthpicker input { flex: 1 1 auto; width: auto; }
-  .desktop-only-block { display: none; }
-  .mobile-only-block { display: block; }
-  /* stack the month picker and the primary action so neither gets squeezed */
-  .page-actions { display: flex; flex-direction: column; align-items: stretch; gap: 10px; flex: 1 1 100%; width: 100%; }
-  .page-actions .btn { width: 100%; white-space: nowrap; }
+  body {
+    font-size: 15px;
+  }
 }
 
-/* ---------- Bottom tab bar (mobile only) ---------- */
-.tabbar { display: none; }
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 8px 0 4px;
+}
+h2 {
+  font-size: 1.2rem;
+  margin: 28px 0 10px;
+}
+
 @media (max-width: 720px) {
-  .tabbar {
-    display: flex;
-    position: fixed;
-    left: 0; right: 0; bottom: 0;
-    background: var(--card);
-    border-top: 1px solid var(--line);
-    z-index: 20;
-    padding: 4px 6px calc(4px + env(safe-area-inset-bottom, 0px));
+  h1 {
+    font-size: 1.4rem;
   }
-  .tab {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    min-height: 54px;              /* comfortable touch target (>= 44pt) */
-    padding: 6px 2px;
-    border-radius: 12px;
-    font-size: .7rem;
-    font-weight: 600;
-    color: var(--muted);
-    line-height: 1;
+  h2 {
+    font-size: 1.08rem;
+    margin: 22px 0 8px;
   }
-  .tab svg { width: 22px; height: 22px; display: block; }
-  .tab.active { color: var(--brand-dark); background: #e8eeff; }
-  .tab:hover { text-decoration: none; }
 }
 
-/* ---------- Loading skeleton ---------- */
-.loading { padding-top: 6px; }
-.skel {
-  background: linear-gradient(90deg, #e9edf5 25%, #f3f6fb 37%, #e9edf5 63%);
-  background-size: 400% 100%;
-  animation: shimmer 1.2s ease-in-out infinite;
-  border-radius: 12px;
-}
-@keyframes shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: 0 0; }
-}
-.skel-title { height: 30px; width: 45%; margin-bottom: 10px; }
-.skel-sub { height: 15px; width: 30%; margin-bottom: 20px; }
-.skel-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 18px; }
-.skel-stat { height: 78px; }
-.skel-card { height: 140px; margin-bottom: 16px; }
-
-/* ---------- Form polish on mobile ---------- */
-@media (max-width: 720px) {
-  label.check {
-    min-height: 46px;
-    margin: 0;
-    padding: 0 2px;
-    line-height: 1.2;
-    border-bottom: 1px solid var(--line);
-  }
-  label.check:last-of-type { border-bottom: none; }
-  label.check input { width: 22px; height: 22px; flex: 0 0 auto; }
-  fieldset { margin-bottom: 18px; }
-  form.form > .btn { width: 100%; }
-  .form p.muted { margin: 12px 0 16px; }
-}
-
-/* ---------- Today screen ---------- */
-.datefield { display: block; margin-bottom: 14px; font-weight: 600; }
-.group { padding: 16px; }
-.grouphead { margin-bottom: 4px; }
-.grouphead select { width: auto; max-width: 60%; margin-top: 0; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip {
-  border: 1px solid var(--line); background: var(--card); color: var(--muted);
-  padding: 10px 14px; border-radius: 999px; font: inherit; font-weight: 600;
-  font-size: .9rem; cursor: pointer; min-height: 44px;
-}
-.chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
-.label {
-  font-size: .82rem; text-transform: uppercase; letter-spacing: .04em;
-  color: var(--muted); font-weight: 700; margin: 16px 0 8px;
-}
-.seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-.seg button {
-  flex: 1; padding: 11px 8px; background: var(--card); border: none;
-  font: inherit; font-weight: 600; font-size: .86rem; color: var(--muted); cursor: pointer;
-}
-.seg button.on { background: var(--brand); color: #fff; }
-.split { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 10px; font-size: .92rem; }
-.split > div { display: flex; justify-content: space-between; padding: 3px 0; }
-.total-row {
-  display: flex; justify-content: space-between; align-items: baseline;
-  padding: 14px 4px 6px; font-weight: 700; font-size: 1.05rem;
-}
-.btn.big { width: 100%; min-height: 54px; font-size: 1.02rem; margin-top: 6px; }
-.addmess { width: 100%; }
-
-/* ---------- Focus, disabled, feedback ---------- */
-:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 8px; }
-button:disabled,
-.btn:disabled,
-.chip:disabled { opacity: .5; cursor: not-allowed; }
-.btn.primary:disabled { background: #9db6ef; border-color: #9db6ef; }
-
-.warnbox {
-  background: #fff7e6; border: 1px solid #f0d9a8; color: #7c4a03;
-  border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
-}
-.warnbox .check { margin-top: 8px; font-weight: 600; }
-
-.flash {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  background: #e8f5ec; border: 1px solid #bfe3ca; color: #14532d;
-  border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; font-weight: 600;
-}
-
-/* ---------- Desktop breathing room ---------- */
-@media (min-width: 900px) {
-  .container { max-width: 1080px; }
-}
-
-.dash-cols { display: grid; }
-.dash-cols > section > h2 { margin-top: 28px; }
-@media (min-width: 900px) {
-  .dash-cols { grid-template-columns: 1fr 1fr; gap: 0 20px; margin-top: 28px; }
-  .dash-cols > section > h2 { margin-top: 0; }
+/* A visible keyboard-focus ring on anything that doesn't supply its own.
+   shadcn components opt out with `focus-visible:outline-none` and use a
+   ring instead. No border-radius here: the outline follows the element's
+   own shape, so rounded chips stay rounded when focused. */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }

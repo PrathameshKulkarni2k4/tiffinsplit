@@ -1,5 +1,12 @@
 import { getMesses } from "@/lib/data";
 import { createMess, updateMess, toggleMess } from "./actions";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+const FIELD = "min-h-[46px] text-base md:min-h-0";
 
 export default async function MessesPage() {
   const messes = await getMesses(false);
@@ -7,80 +14,116 @@ export default async function MessesPage() {
   return (
     <>
       <h1>Messes</h1>
-      <p className="subtitle">Add messes and set their full and half tiffin prices.</p>
+      <p className="mb-5 text-muted-foreground">
+        Add messes and set their full and half tiffin prices.
+      </p>
 
-      <p className="muted">
+      <p className="mb-5 text-sm text-muted-foreground">
         Changing a price only affects <strong>future</strong> orders. Orders already logged keep the
         price they were entered at, so past bills never change.
       </p>
 
-      <div className="card">
-        <h2 style={{ marginTop: 0 }}>Add a mess</h2>
-        <form action={createMess} className="form">
-          <label>
+      <Card className="mb-[18px] px-5 py-[18px]">
+        <h2 className="mt-0">Add a mess</h2>
+        <form action={createMess}>
+          <Label className="mb-3 block font-semibold">
             Name
-            <input name="name" required placeholder="e.g. Shree Mess" />
-          </label>
-          <div className="grid">
-            <label>
+            <Input name="name" required placeholder="e.g. Shree Mess" className={FIELD} />
+          </Label>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
+            <Label className="block font-semibold">
               Full tiffin (₹)
-              <input type="number" step="0.01" min="0" name="full_price" defaultValue="90" required />
-            </label>
-            <label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                name="full_price"
+                defaultValue="90"
+                required
+                className={FIELD}
+              />
+            </Label>
+            <Label className="block font-semibold">
               Half tiffin (₹)
-              <input type="number" step="0.01" min="0" name="half_price" defaultValue="65" required />
-            </label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                name="half_price"
+                defaultValue="65"
+                required
+                className={FIELD}
+              />
+            </Label>
           </div>
-          <button className="btn primary" type="submit">
+          <Button type="submit" className="mt-3">
             Add mess
-          </button>
+          </Button>
         </form>
-      </div>
+      </Card>
 
       <h2>All messes</h2>
       {messes.length === 0 ? (
-        <div className="card">
-          <p className="muted">No messes yet. Add your first one above.</p>
-        </div>
+        <Card className="px-5 py-[18px]">
+          <p className="m-0 text-sm text-muted-foreground">
+            No messes yet. Add your first one above.
+          </p>
+        </Card>
       ) : (
         messes.map((m) => (
-          <div className="card" key={m.id}>
-            <div className="row" style={{ marginBottom: 10 }}>
+          <Card key={m.id} className="mb-[18px] px-5 py-[18px]">
+            <div className="mb-2.5 flex flex-wrap items-center justify-between gap-3">
               <strong>{m.name}</strong>
-              <span className={`pill ${m.is_active ? "" : "half"}`}>
+              <Badge variant={m.is_active ? "secondary" : "warn"}>
                 {m.is_active ? "active" : "inactive"}
-              </span>
+              </Badge>
             </div>
 
-            <form action={updateMess} className="form">
+            <form action={updateMess}>
               <input type="hidden" name="id" value={m.id} />
-              <div className="grid">
-                <label>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
+                <Label className="block font-semibold">
                   Name
-                  <input name="name" defaultValue={m.name} required />
-                </label>
-                <label>
+                  <Input name="name" defaultValue={m.name} required className={FIELD} />
+                </Label>
+                <Label className="block font-semibold">
                   Full (₹)
-                  <input type="number" step="0.01" min="0" name="full_price" defaultValue={m.full_price} required />
-                </label>
-                <label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="full_price"
+                    defaultValue={m.full_price}
+                    required
+                    className={FIELD}
+                  />
+                </Label>
+                <Label className="block font-semibold">
                   Half (₹)
-                  <input type="number" step="0.01" min="0" name="half_price" defaultValue={m.half_price} required />
-                </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="half_price"
+                    defaultValue={m.half_price}
+                    required
+                    className={FIELD}
+                  />
+                </Label>
               </div>
-              <button className="btn small primary" type="submit">
+              <Button type="submit" size="sm" className="mt-3">
                 Save changes
-              </button>
+              </Button>
             </form>
 
-            <form action={toggleMess} style={{ marginTop: 10 }}>
+            <form action={toggleMess} className="mt-2.5">
               <input type="hidden" name="id" value={m.id} />
               <input type="hidden" name="is_active" value={m.is_active ? "false" : "true"} />
-              <button className="btn small" type="submit">
+              <Button type="submit" variant="outline" size="sm">
                 {m.is_active ? "Deactivate" : "Reactivate"}
-              </button>
+              </Button>
             </form>
-          </div>
+          </Card>
         ))
       )}
     </>

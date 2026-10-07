@@ -2,6 +2,9 @@
 
 import { useFormStatus } from "react-dom";
 
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
 /**
  * A submit button that disables itself while the form is in flight, so a
  * double-tap can never log the same day twice.
@@ -9,7 +12,7 @@ import { useFormStatus } from "react-dom";
 export default function SubmitButton({
   children,
   pendingLabel = "Saving…",
-  className = "btn primary big",
+  className,
   disabled = false,
 }: {
   children: React.ReactNode;
@@ -20,8 +23,13 @@ export default function SubmitButton({
   const { pending } = useFormStatus();
 
   return (
-    <button type="submit" className={className} disabled={pending || disabled}>
+    <Button
+      type="submit"
+      size="lg"
+      className={cn("w-full", className)}
+      disabled={pending || disabled}
+    >
       {pending ? pendingLabel : children}
-    </button>
+    </Button>
   );
 }

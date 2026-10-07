@@ -4,8 +4,24 @@ import { getMonthOrders, getMembers, nameMap, currentMonthLabel } from "@/lib/da
 import { money, prettyDate } from "@/lib/format";
 import MonthPicker from "@/components/MonthPicker";
 import { deleteOrder, undoBatch } from "./actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type SearchParams = { month?: string; logged?: string; batch?: string };
+
+function Portion({ type }: { type: string }) {
+  return <Badge variant={type === "half" ? "warn" : "secondary"}>{type}</Badge>;
+}
 
 export default async function OrdersPage({ searchParams }: { searchParams?: SearchParams }) {
   const month = typeof searchParams?.month === "string" ? searchParams.month : currentMonthLabel();
@@ -20,115 +36,131 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
 
   return (
     <>
-      <div className="row">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1>Orders</h1>
-          <p className="subtitle">Every tiffin logged this month</p>
+          <p className="mb-5 text-muted-foreground">Every tiffin logged this month</p>
         </div>
-        <div className="page-actions">
+        <div className="flex w-full flex-col items-stretch gap-2.5 sm:w-auto sm:flex-row sm:items-center">
           <MonthPicker month={month} />
-          <Link href="/orders/new" className="btn primary">
-            + Log a tiffin
-          </Link>
+          <Button asChild>
+            <Link href="/orders/new">+ Log a tiffin</Link>
+          </Button>
         </div>
       </div>
 
       {typeof searchParams?.logged === "string" && (
-        <div className="flash">
-          <span>
+        <Alert variant="success" className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <AlertDescription className="font-semibold">
             Logged {searchParams.logged} tiffin{searchParams.logged === "1" ? "" : "s"} today.
-          </span>
+          </AlertDescription>
           {typeof searchParams?.batch === "string" && (
             <form action={undoBatch}>
               <input type="hidden" name="batch" value={searchParams.batch} />
-              <button className="btn small" type="submit">
+              <Button variant="outline" size="sm" type="submit">
                 Undo
-              </button>
+              </Button>
             </form>
           )}
-        </div>
+        </Alert>
       )}
 
       {orders.length === 0 ? (
-        <div className="card">
-          <p className="muted">
+        <Card className="px-5 py-[18px]">
+          <p className="m-0 text-sm text-muted-foreground">
             No orders this month. <Link href="/orders/new">Log the first tiffin.</Link>
           </p>
-        </div>
+        </Card>
       ) : (
         <>
           {/* Desktop: table */}
-          <div className="card table-wrap desktop-only-block">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Mess</th>
-                  <th>Portion</th>
-                  <th className="num">Price</th>
-                  <th>Split between</th>
-                  <th>Logged by</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
+          <Card className="hidden overflow-hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Mess</TableHead>
+                  <TableHead>Portion</TableHead>
+                  <TableHead className="text-right">Price</TableHead>
+                  <TableHead>Split between</TableHead>
+                  <TableHead>Logged by</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {orders.map((o) => (
-                  <tr key={o.id}>
-                    <td>{prettyDate(o.order_date)}</td>
-                    <td>{o.messes?.name ?? "—"}</td>
-                    <td>
-                      <span className={`pill ${o.tiffin_type}`}>{o.tiffin_type}</span>
-                    </td>
-                    <td className="num amount">{money(o.unit_price)}</td>
-                    <td>
+                  <TableRow key={o.id}>
+                    <TableCell>{prettyDate(o.order_date)}</TableCell>
+                    <TableCell>{o.messes?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      <Portion type={o.tiffin_type} />
+                    </TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">
+                      {money(o.unit_price)}
+                    </TableCell>
+                    <TableCell>
                       {(o.order_shares ?? [])
                         .map((s) => `${names[s.user_id] ?? "—"} ${money(s.share_amount)}`)
                         .join(" · ")}
-                    </td>
-                    <td className="muted">{names[o.created_by] ?? "—"}</td>
-                    <td className="num">
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {names[o.created_by] ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
                       {canDelete(o.created_by) && (
                         <form action={deleteOrder}>
                           <input type="hidden" name="id" value={o.id} />
-                          <button className="btn small danger" type="submit">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            type="submit"
+                            className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          >
                             Delete
-                          </button>
+                          </Button>
                         </form>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </Card>
 
           {/* Mobile: cards */}
-          <div className="mobile-only-block">
+          <div className="md:hidden">
             {orders.map((o) => (
-              <div className="card" key={o.id}>
-                <div className="row">
-                  <span className="muted">{prettyDate(o.order_date)}</span>
-                  <span className={`pill ${o.tiffin_type}`}>{o.tiffin_type}</span>
-                  <span className="amount">{money(o.unit_price)}</span>
+              <Card key={o.id} className="mb-[18px] px-4 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-sm text-muted-foreground">{prettyDate(o.order_date)}</span>
+                  <Portion type={o.tiffin_type} />
+                  <span className="font-semibold tabular-nums">{money(o.unit_price)}</span>
                 </div>
-                <div style={{ fontWeight: 600, marginTop: 6 }}>{o.messes?.name ?? "—"}</div>
-                <div className="muted" style={{ marginTop: 2 }}>
+                <div className="mt-1.5 font-semibold">{o.messes?.name ?? "—"}</div>
+                <div className="mt-0.5 text-sm text-muted-foreground">
                   {(o.order_shares ?? [])
                     .map((s) => `${names[s.user_id] ?? "—"} ${money(s.share_amount)}`)
                     .join(" · ")}
                 </div>
-                <div className="row" style={{ marginTop: 10 }}>
-                  <span className="muted">Logged by {names[o.created_by] ?? "—"}</span>
+                <div className="mt-2.5 flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-sm text-muted-foreground">
+                    Logged by {names[o.created_by] ?? "—"}
+                  </span>
                   {canDelete(o.created_by) && (
                     <form action={deleteOrder}>
                       <input type="hidden" name="id" value={o.id} />
-                      <button className="btn small danger" type="submit">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        type="submit"
+                        className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      >
                         Delete
-                      </button>
+                      </Button>
                     </form>
                   )}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </>
