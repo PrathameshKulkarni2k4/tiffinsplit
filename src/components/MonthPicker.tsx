@@ -19,7 +19,7 @@ export default function MonthPicker({ month }: { month: string }) {
           const value = e.target.value;
           router.push(value ? `${pathname}?month=${value}` : pathname);
         }}
-        className="flex-1 rounded-md border border-input bg-transparent px-2.5 py-[7px] text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none"
+        className="min-h-[44px] flex-1 rounded-md border border-input bg-transparent px-2.5 py-[7px] text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-0 sm:flex-none"
       />
     </Label>
   );

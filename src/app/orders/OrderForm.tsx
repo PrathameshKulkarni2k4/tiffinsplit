@@ -106,7 +106,10 @@ export default function OrderForm({ messes, members }: { messes: Mess[]; members
                 checked={selected.includes(m.id)}
                 onCheckedChange={() => toggle(m.id)}
               />
-              <label htmlFor={`sharer-${m.id}`} className="cursor-pointer font-normal">
+              <label
+                htmlFor={`sharer-${m.id}`}
+                className="flex flex-1 cursor-pointer items-center self-stretch font-normal"
+              >
                 {m.full_name || m.email}
               </label>
             </div>

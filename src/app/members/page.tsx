@@ -40,42 +40,70 @@ export default async function MembersPage() {
           <p className="m-0 text-sm text-muted-foreground">No one is waiting to be approved.</p>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Requested</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pending.map((u) => (
-                <TableRow key={u.id}>
-                  <TableCell>{u.full_name ?? "—"}</TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {prettyDate(u.created_at.slice(0, 10))}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <form action={setActive}>
-                      <input type="hidden" name="id" value={u.id} />
-                      <input type="hidden" name="is_active" value="true" />
-                      <Button type="submit" size="sm">
-                        Approve
-                      </Button>
-                    </form>
-                  </TableCell>
+        <>
+          {/* Desktop: table */}
+          <Card className="hidden overflow-hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Requested</TableHead>
+                  <TableHead />
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+              </TableHeader>
+              <TableBody>
+                {pending.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell>{u.full_name ?? "—"}</TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {prettyDate(u.created_at.slice(0, 10))}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <form action={setActive}>
+                        <input type="hidden" name="id" value={u.id} />
+                        <input type="hidden" name="is_active" value="true" />
+                        <Button type="submit" size="sm">
+                          Approve
+                        </Button>
+                      </form>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+
+          {/* Mobile: cards — a four-column table can't fit a phone */}
+          <div className="md:hidden">
+            {pending.map((u) => (
+              <Card key={u.id} className="mb-[18px] px-4 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="font-semibold">{u.full_name ?? "—"}</span>
+                  <Badge variant="warn">pending</Badge>
+                </div>
+                <div className="mt-1 break-all text-sm text-muted-foreground">{u.email}</div>
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Requested {prettyDate(u.created_at.slice(0, 10))}
+                </div>
+                <form action={setActive} className="mt-3">
+                  <input type="hidden" name="id" value={u.id} />
+                  <input type="hidden" name="is_active" value="true" />
+                  <Button type="submit" className="w-full">
+                    Approve
+                  </Button>
+                </form>
+              </Card>
+            ))}
+          </div>
+        </>
       )}
 
       <h2>Active members ({active.length})</h2>
-      <Card className="overflow-hidden">
+
+      {/* Desktop: table */}
+      <Card className="hidden overflow-hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -133,6 +161,50 @@ export default async function MembersPage() {
           </TableBody>
         </Table>
       </Card>
+
+      {/* Mobile: cards */}
+      <div className="md:hidden">
+        {active.map((u) => {
+          const isMe = u.id === profile.id;
+          return (
+            <Card key={u.id} className="mb-[18px] px-4 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="font-semibold">
+                  {u.full_name ?? "—"}
+                  {isMe ? " (you)" : ""}
+                </span>
+                <Badge variant="secondary">{u.role}</Badge>
+              </div>
+              <div className="mt-1 break-all text-sm text-muted-foreground">{u.email}</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <form action={setRole} className="flex-1">
+                  <input type="hidden" name="id" value={u.id} />
+                  <input
+                    type="hidden"
+                    name="role"
+                    value={u.role === "admin" ? "member" : "admin"}
+                  />
+                  <Button type="submit" variant="outline" className="w-full" disabled={isMe}>
+                    {u.role === "admin" ? "Make member" : "Make admin"}
+                  </Button>
+                </form>
+                <form action={setActive} className="flex-1">
+                  <input type="hidden" name="id" value={u.id} />
+                  <input type="hidden" name="is_active" value="false" />
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    disabled={isMe}
+                    className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    Deactivate
+                  </Button>
+                </form>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
     </>
   );
 }

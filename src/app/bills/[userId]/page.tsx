@@ -38,6 +38,8 @@ export default async function PersonBillPage({
 
   const total = Math.round(rows.reduce((s, r) => s + r.amount, 0) * 100) / 100;
 
+  const portionVariant = (t: string) => (t === "half" ? "warn" : "secondary");
+
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -62,49 +64,85 @@ export default async function PersonBillPage({
           </p>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Mess</TableHead>
-                <TableHead>Portion</TableHead>
-                <TableHead className="text-right">Tiffin</TableHead>
-                <TableHead>Shared with</TableHead>
-                <TableHead className="text-right">Their share</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map(({ order, amount }) => {
-                const others = (order.order_shares ?? []).filter((s) => s.user_id !== params.userId);
-                return (
-                  <TableRow key={order.id}>
-                    <TableCell>{prettyDate(order.order_date)}</TableCell>
-                    <TableCell>{order.messes?.name ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={order.tiffin_type === "half" ? "warn" : "secondary"}>
-                        {order.tiffin_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold tabular-nums">
-                      {money(order.unit_price)}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {others.length ? others.map((s) => names[s.user_id] ?? "—").join(", ") : "alone"}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold tabular-nums">
-                      {money(amount)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Card>
+        <>
+          {/* Desktop: table */}
+          <Card className="hidden overflow-hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Mess</TableHead>
+                  <TableHead>Portion</TableHead>
+                  <TableHead className="text-right">Tiffin</TableHead>
+                  <TableHead>Shared with</TableHead>
+                  <TableHead className="text-right">Their share</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map(({ order, amount }) => {
+                  const others = (order.order_shares ?? []).filter(
+                    (s) => s.user_id !== params.userId
+                  );
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell>{prettyDate(order.order_date)}</TableCell>
+                      <TableCell>{order.messes?.name ?? "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant={portionVariant(order.tiffin_type)}>
+                          {order.tiffin_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums">
+                        {money(order.unit_price)}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {others.length
+                          ? others.map((s) => names[s.user_id] ?? "—").join(", ")
+                          : "alone"}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums">
+                        {money(amount)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </Card>
+
+          {/* Mobile: cards — six columns can't fit a phone */}
+          <div className="md:hidden">
+            {rows.map(({ order, amount }) => {
+              const others = (order.order_shares ?? []).filter((s) => s.user_id !== params.userId);
+              return (
+                <Card key={order.id} className="mb-[18px] px-4 py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      {prettyDate(order.order_date)}
+                    </span>
+                    <Badge variant={portionVariant(order.tiffin_type)}>
+                      {order.tiffin_type}
+                    </Badge>
+                    <span className="font-semibold tabular-nums">{money(amount)}</span>
+                  </div>
+                  <div className="mt-1.5 font-semibold">{order.messes?.name ?? "—"}</div>
+                  <div className="mt-0.5 text-sm text-muted-foreground">
+                    Tiffin {money(order.unit_price)} ·{" "}
+                    {others.length
+                      ? `with ${others.map((s) => names[s.user_id] ?? "—").join(", ")}`
+                      : "eaten alone"}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <p className="text-sm text-muted-foreground">
-        <Link href={`/bills?month=${month}`}>← Back to Bills</Link>
+        <Link href={`/bills?month=${month}`} className="inline-block py-1">
+          ← Back to Bills
+        </Link>
       </p>
     </>
   );

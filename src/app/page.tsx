@@ -115,7 +115,9 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
                 {summary.map((s) => (
                   <TableRow key={s.month}>
                     <TableCell>
-                      <Link href={`/?month=${s.month}`}>{prettyMonth(s.month)}</Link>
+                      <Link href={`/?month=${s.month}`} className="inline-block py-1">
+                        {prettyMonth(s.month)}
+                      </Link>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{s.orders}</TableCell>
                     <TableCell className="text-right font-semibold tabular-nums">
@@ -133,7 +135,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
       {recent.length === 0 ? (
         <Card className="px-5 py-[18px]">
           <p className="m-0 text-sm text-muted-foreground">
-            No orders in this month. <Link href="/orders/new">Log a tiffin.</Link>
+            No orders in this month. <Link href="/orders/new" className="underline">Log a tiffin.</Link>
           </p>
         </Card>
       ) : (
