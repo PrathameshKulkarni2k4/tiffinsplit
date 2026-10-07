@@ -35,7 +35,7 @@ function summaryLines(orders: PlannedOrder[]) {
 
 const LABEL = "mb-2 mt-4 text-[0.82rem] font-bold uppercase tracking-wide text-muted-foreground";
 const SELECT =
-  "rounded-md border border-input bg-card px-2.5 py-2 text-sm font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "min-h-[44px] rounded-md border border-input bg-card px-2.5 py-2 text-sm font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-0";
 
 export default function TodayForm({
   messes,
@@ -151,7 +151,10 @@ export default function TodayForm({
                 checked={allowDuplicate}
                 onCheckedChange={(v) => setAllowDuplicate(v === true)}
               />
-              <label htmlFor="allow-duplicate" className="cursor-pointer">
+              <label
+                htmlFor="allow-duplicate"
+                className="flex flex-1 cursor-pointer items-center self-stretch"
+              >
                 I know — add these anyway
               </label>
             </div>
@@ -210,7 +213,7 @@ export default function TodayForm({
                 type="button"
                 aria-pressed={g.mode === "pairs"}
                 className={cn(
-                  "flex-1 px-2 py-[11px] text-[0.86rem] font-semibold",
+                  "min-h-[44px] flex-1 px-2 py-[11px] text-[0.86rem] font-semibold",
                   g.mode === "pairs"
                     ? "bg-primary text-primary-foreground"
                     : "bg-card text-muted-foreground",
@@ -223,7 +226,7 @@ export default function TodayForm({
                 type="button"
                 aria-pressed={g.mode === "all-half"}
                 className={cn(
-                  "flex-1 px-2 py-[11px] text-[0.86rem] font-semibold",
+                  "min-h-[44px] flex-1 px-2 py-[11px] text-[0.86rem] font-semibold",
                   g.mode === "all-half"
                     ? "bg-primary text-primary-foreground"
                     : "bg-card text-muted-foreground",
@@ -324,7 +327,7 @@ export default function TodayForm({
         Confirm today&apos;s lunch
       </SubmitButton>
       <p className="text-center text-sm text-muted-foreground">
-        Need something different? <a href="/orders/new">Add tiffins manually</a>
+        Need something different? <a href="/orders/new" className="underline">Add tiffins manually</a>
       </p>
     </form>
   );

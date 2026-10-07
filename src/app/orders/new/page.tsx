@@ -10,7 +10,7 @@ export default async function NewOrderPage() {
     return (
       <Card className="px-5 py-[18px]">
         <p className="m-0">
-          No messes yet. <Link href="/messes">Add a mess first.</Link>
+          No messes yet. <Link href="/messes" className="underline">Add a mess first.</Link>
         </p>
       </Card>
     );

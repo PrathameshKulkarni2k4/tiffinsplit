@@ -53,7 +53,7 @@ export default async function BillsPage({ searchParams }: { searchParams?: Searc
         return (
           <Card key={m.id} className="mb-[18px] px-5 py-[18px]">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Link href={`/bills/${m.id}?month=${month}`} className="font-bold">
+              <Link href={`/bills/${m.id}?month=${month}`} className="inline-block py-0.5 font-bold">
                 {names[m.id]}
               </Link>
               <span className="font-semibold tabular-nums">{money(totals[m.id] ?? 0)}</span>

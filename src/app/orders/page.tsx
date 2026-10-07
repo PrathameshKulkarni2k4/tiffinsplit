@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getMonthOrders, getMembers, nameMap, currentMonthLabel } from "@/lib/data";
 import { money, prettyDate } from "@/lib/format";
 import MonthPicker from "@/components/MonthPicker";
+import ConfirmButton from "@/components/ConfirmButton";
 import { deleteOrder, undoBatch } from "./actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,9 @@ import {
 } from "@/components/ui/table";
 
 type SearchParams = { month?: string; logged?: string; batch?: string };
+
+const DELETE_CLASS =
+  "border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive";
 
 function Portion({ type }: { type: string }) {
   return <Badge variant={type === "half" ? "warn" : "secondary"}>{type}</Badge>;
@@ -68,7 +72,7 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
       {orders.length === 0 ? (
         <Card className="px-5 py-[18px]">
           <p className="m-0 text-sm text-muted-foreground">
-            No orders this month. <Link href="/orders/new">Log the first tiffin.</Link>
+            No orders this month. <Link href="/orders/new" className="underline">Log the first tiffin.</Link>
           </p>
         </Card>
       ) : (
@@ -110,14 +114,14 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
                       {canDelete(o.created_by) && (
                         <form action={deleteOrder}>
                           <input type="hidden" name="id" value={o.id} />
-                          <Button
+                          <ConfirmButton
                             variant="outline"
                             size="sm"
-                            type="submit"
-                            className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            className={DELETE_CLASS}
+                            confirmLabel="Tap again to delete"
                           >
                             Delete
-                          </Button>
+                          </ConfirmButton>
                         </form>
                       )}
                     </TableCell>
@@ -149,14 +153,14 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
                   {canDelete(o.created_by) && (
                     <form action={deleteOrder}>
                       <input type="hidden" name="id" value={o.id} />
-                      <Button
+                      <ConfirmButton
                         variant="outline"
                         size="sm"
-                        type="submit"
-                        className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        className={DELETE_CLASS}
+                        confirmLabel="Tap again"
                       >
                         Delete
-                      </Button>
+                      </ConfirmButton>
                     </form>
                   )}
                 </div>
