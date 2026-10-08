@@ -50,10 +50,28 @@ jobs:
             exit 1
           fi
 
-      - name: Install PostgreSQL client
+      # Ubuntu's default postgresql-client is 16, and the Supabase server is 17.
+      # pg_dump refuses to dump a server newer than itself -- it exits with
+      # "aborting because of server version mismatch" before reading a single
+      # row -- so the client has to come from the PostgreSQL apt repo instead.
+      #
+      # Pinned to the server's major version on purpose. When Supabase upgrades
+      # the project to 18 this breaks again, but it fails loudly and names both
+      # versions, so the fix is just bumping the two 17s below.
+      - name: Install PostgreSQL 17 client
         run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail -sSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client
+          sudo apt-get install -y -qq postgresql-client-17
+          # Confirm the wrapper picked 17 and not the preinstalled 16.
+          pg_dump --version
+          pg_dump --version | grep -q ' 17\.' || {
+            echo "::error::pg_dump is not version 17; it will refuse to dump the server."
+            exit 1
+          }
 
       - name: Dump
         env:
