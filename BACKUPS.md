@@ -81,6 +81,50 @@ policies, but **not** the `GRANT` statements that let Supabase's `anon` and
 see nothing. Re-apply the grants from the migrations in `supabase/migrations/`,
 or from Supabase's default privileges.
 
+## Recovering production
+
+There is deliberately no workflow that restores into production. Restoring in
+place means dropping the `public` schema in the live database, and that should
+not be a button in a repository, reachable from a phone.
+
+Production is recovered by **rebuilding and repointing** instead, which the free
+plan's project limit makes simpler rather than harder.
+
+**1. Restore into staging.** The Restore drill already does exactly this.
+
+**2. Check it through the app.** Preview deployments point at staging, so open a
+preview URL and confirm the restored data looks right before production is
+involved. This step is what catches a restore that technically succeeded but
+left the app unable to read anything.
+
+**3. Repoint production.** In Vercel, change the **Production** environment
+variables to the staging project's values and redeploy:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+Production then serves the restored database.
+
+**4. Keep the old project.** The original production database is untouched and
+still holds everything as it was. If the restore turns out to be wrong, point
+the variables back.
+
+**5. Rebuild a staging later.** Once settled, delete or pause the old production
+project and create a fresh staging.
+
+### Why not a third project
+
+The free plan allows **two active projects**, and this account uses both:
+`tiffinsplit` and `tiffinsplit-staging`. Paused projects do not count towards
+that limit, so a slot can always be freed by pausing one. But repointing at
+staging needs no new project at all, which is why this is the cheaper route.
+
+### The trade-off
+
+After step 3, preview and production share the staging database. That is fine
+temporarily and is not a resting state — build a new staging when you can, so
+previews stop running against the live data.
+
 ## What the backup does not contain
 
 - **Auth users and sessions.** These live in the `auth` schema, which Supabase
