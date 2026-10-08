@@ -66,6 +66,39 @@ jobs:
             exit 1
           }
 
+      # A password containing @, :, /, #, ? or & has to be percent-encoded, or the
+      # string parses as a different host. An unencoded @ is the common one: the
+      # parser treats everything after it as the host, and the connection then
+      # fails with a DNS or auth error that says nothing about the real cause.
+      # Catching it here is cheaper than debugging it after a failed run.
+      - name: Sanity-check the connection string
+        env:
+          TARGET: ${{ secrets.STAGING_DB_URL }}
+        run: |
+          set -euo pipefail
+          case "$TARGET" in
+            postgresql://*|postgres://*) ;;
+            *) echo "::error::STAGING_DB_URL should start with postgresql:// - it looks like a connection string was not pasted."; exit 1 ;;
+          esac
+          authority="${TARGET#*://}"
+          authority="${authority%%/*}"
+          at_count=$(printf '%s' "$authority" | tr -cd '@' | wc -c)
+          echo "found $at_count '@' in the host section of the connection string; exactly 1 is normal"
+          if [ "$at_count" -gt 1 ]; then
+            echo "::error::STAGING_DB_URL looks like it has an unencoded '@' in the password. '@' separates the password from the host, so the string parses wrong and the connection fails with a misleading error. Either percent-encode it as %40, or set the database password to letters and digits only."
+            exit 1
+          fi
+          # The userinfo section is user:password, so exactly one ':' is normal.
+          # More means an unencoded ':' in the password, which confuses the same
+          # parse - and unlike '@' it produces a port error rather than a host one.
+          userinfo="${authority%@*}"
+          colon_count=$(printf '%s' "$userinfo" | tr -cd ':' | wc -c)
+          echo "found $colon_count ':' in the userinfo section; at most 1 is normal"
+          if [ "$colon_count" -gt 1 ]; then
+            echo "::error::STAGING_DB_URL looks like it has an unencoded ':' in the password. Either percent-encode it as %3A, or set the database password to letters and digits only."
+            exit 1
+          fi
+
       - name: Find the backup artifact
         env:
           GH_TOKEN: ${{ github.token }}
