@@ -5,7 +5,10 @@
 # projects also pause after seven days without database activity -- this job's
 # weekly connection doubles as a keep-alive.
 #
-# Setup: add one repository secret, SUPABASE_DB_URL.
+# Setup: two repository secrets.
+#
+#   1. SUPABASE_DB_URL   - how to connect. Details below.
+#   2. BACKUP_PASSPHRASE - encrypts the dump. See the Encrypt step.
 #
 # It must use the backup_reader role created by
 # supabase/migrations/20261008010000_backup_reader_role.sql, not postgres.
@@ -121,22 +124,35 @@ jobs:
             exit 1
           fi
 
-      # A dump of this database contains the group's names and email addresses.
-      # On a public repository, Actions artifacts are downloadable by anyone, so
-      # uploading one would publish that. Rather than rely on that being
-      # remembered, check the repository's actual visibility and refuse.
-      - name: Refuse to publish a dump from a public repository
+      # A dump of this database contains the group's names and email addresses,
+      # and on a public repository Actions artifacts are downloadable by anyone.
+      #
+      # Making the repository private would fix that, but branch protection is
+      # only free on public repositories: on GitHub Free a private repo loses it,
+      # and the ruleset protecting main would go with it. Encrypting keeps both.
+      #
+      # The artifact is useless without BACKUP_PASSPHRASE. To restore:
+      #   gpg --decrypt tiffinsplit-YYYY-MM-DD.sql.gz.gpg > dump.sql.gz
+      #   gunzip dump.sql.gz
+      - name: Encrypt the dump
         env:
-          GH_TOKEN: ${{ github.token }}
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
           set -euo pipefail
-          vis=$(curl -sSL -H "Authorization: Bearer $GH_TOKEN" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}" | jq -r .visibility)
-          echo "repository visibility: $vis"
-          if [ "$vis" != "private" ]; then
-            echo "::error::This repository is '$vis', so a backup artifact would be readable by anyone with the repo URL. Make it private (Settings -> General -> Danger Zone -> Change visibility), or store the dump somewhere access-controlled instead."
+          if [ -z "$PASSPHRASE" ]; then
+            echo "::error::BACKUP_PASSPHRASE is not set. Add it in Settings -> Secrets and variables -> Actions. Use a long random string and keep a copy in a password manager: unlike a database password this cannot be reset, and without it the backups cannot be restored."
             exit 1
           fi
+          stamp=$(date -u +%Y-%m-%d)
+          # --passphrase-fd 0 reads the passphrase from stdin so it never appears
+          # in the process list, which --passphrase would.
+          printf '%s' "$PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 \
+            --output "backup/tiffinsplit-${stamp}.sql.gz.gpg" \
+            backup/*.sql.gz
+          # Leave only the encrypted file, so a mistake cannot upload the plain one.
+          rm -f backup/*.sql.gz
+          ls -la backup/
 
       - name: Upload
         uses: actions/upload-artifact@v4
