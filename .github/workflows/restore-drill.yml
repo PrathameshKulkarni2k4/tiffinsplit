@@ -51,6 +51,23 @@ jobs:
             exit 1
           fi
 
+      # This workflow cannot succeed, and it is better it says so up front than
+      # fails obscurely half way through a load.
+      #
+      # public.users.id is a foreign key to auth.users.id, and auth is
+      # per-project. A backup taken from production can never satisfy staging's
+      # auth foreign key, so the load dies on that constraint every time - after
+      # copying every row successfully, which makes it look like something else
+      # went wrong.
+      #
+      # Kept rather than deleted: the download, decrypt and row-count steps are
+      # a useful reference, and a silent absence is harder to understand than an
+      # explanation.
+      - name: Explain why this cannot run
+        run: |
+          echo "::error::This drill cannot succeed, by construction. A backup can only be restored into the project it came from: public.users.id is a foreign key to auth.users.id, and auth is per-project, so production's rows can never satisfy staging's foreign key. See BACKUPS.md, section 'Recovering production'."
+          exit 1
+
       - name: Check the secrets are present
         env:
           STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}

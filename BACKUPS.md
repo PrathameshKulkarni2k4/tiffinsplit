@@ -43,8 +43,8 @@ yourself when restoring.
 
 ## Restoring
 
-> **Restore into staging first, never straight into production.** A restore
-> overwrites whatever it is pointed at.
+> **A restore replaces everything it touches.** Read the recovery section below
+> before running one.
 
 **1. Get the file.** Download the artifact from the run, and unzip it.
 
@@ -81,49 +81,80 @@ policies, but **not** the `GRANT` statements that let Supabase's `anon` and
 see nothing. Re-apply the grants from the migrations in `supabase/migrations/`,
 or from Supabase's default privileges.
 
-## Recovering production
+## Recovering production (emergency)
 
-There is deliberately no workflow that restores into production. Restoring in
-place means dropping the `public` schema in the live database, and that should
-not be a button in a repository, reachable from a phone.
+**A backup can only be restored into the project it came from.** That is a
+constraint, not a preference, and it is worth understanding before you need it.
 
-Production is recovered by **rebuilding and repointing** instead, which the free
-plan's project limit makes simpler rather than harder.
+`public.users.id` is a foreign key to `auth.users.id`. Auth lives in the `auth`
+schema, which is per-project and is not in the backup. So production's user rows
+can never satisfy another project's foreign key — restoring into staging fails
+on exactly that constraint, every time. This is why there is no drill against
+staging, and why "restore somewhere else and repoint" does not work.
 
-**1. Restore into staging.** The Restore drill already does exactly this.
+### What you need
 
-**2. Check it through the app.** Preview deployments point at staging, so open a
-preview URL and confirm the restored data looks right before production is
-involved. This step is what catches a restore that technically succeeded but
-left the app unable to read anything.
+1. The encrypted backup — **Actions → Backup → the run → Artifacts**.
+2. `BACKUP_PASSPHRASE`, from your password manager.
+3. A computer with a terminal, or a browser Codespace. Not a phone.
+4. Production's database password.
 
-**3. Repoint production.** In Vercel, change the **Production** environment
-variables to the staging project's values and redeploy:
+### Steps
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+```bash
+# 1. decrypt
+gpg --decrypt tiffinsplit-2026-10-08.sql.gz.gpg > dump.sql.gz
+gunzip dump.sql.gz
 
-Production then serves the restored database.
+# 2. drop and load in ONE transaction, so a failure rolls back and
+#    changes nothing
+psql "postgresql://postgres.<PROD-REF>:<password>@<POOLER-HOST>:5432/postgres" \
+  -v ON_ERROR_STOP=1 --single-transaction \
+  -c 'drop schema public cascade;' \
+  -f dump.sql
+```
 
-**4. Keep the old project.** The original production database is untouched and
-still holds everything as it was. If the restore turns out to be wrong, point
-the variables back.
+That replaces everything in production's `public` schema with the backup's
+contents. **Anything created since that backup is lost**, so check the backup's
+date against what you are trying to recover before running it.
 
-**5. Rebuild a staging later.** Once settled, delete or pause the old production
-project and create a fresh staging.
+### Without a terminal
 
-### Why not a third project
+Decrypt the file on a computer, then paste `dump.sql` into the Supabase SQL
+editor and run it. Workable, but nothing wraps it in a transaction, so a failure
+part-way leaves the schema half-loaded. Prefer the `psql` form.
 
-The free plan allows **two active projects**, and this account uses both:
-`tiffinsplit` and `tiffinsplit-staging`. Paused projects do not count towards
-that limit, so a slot can always be freed by pausing one. But repointing at
-staging needs no new project at all, which is why this is the cheaper route.
+Do **not** paste the dump and its passphrase into an online "decrypt" website.
+That hands your entire database and its key to a stranger.
 
-### The trade-off
+### Partial recovery — the common case
 
-After step 3, preview and production share the staging database. That is fine
-temporarily and is not a resting state — build a new staging when you can, so
-previews stop running against the live data.
+Most incidents are not "the database is gone". They are "someone deleted four
+orders on Tuesday". That does not need a restore at all:
+
+```bash
+grep -A 30 'COPY public.orders ' dump.sql
+```
+
+Find the rows, insert just those. No drop, no downtime, no risk to the rest.
+
+### Two things to know
+
+- **The auth trigger is not in the backup.** `on_auth_user_created` lives on
+  `auth.users`, so a restore leaves it missing and new sign-ups would get no
+  profile row. Recreate it from
+  `supabase/migrations/20261005000000_init.sql` after restoring.
+- **This has not been tested end to end.** The load has been proven to run
+  almost to completion — every function, table, row, index and trigger — failing
+  only on the cross-project foreign key above, which does not arise when
+  restoring into the project the backup came from. That is strong evidence, not
+  proof. If you ever get a quiet hour, running step 2 against a copy is worth
+  more than any amount of reading.
+
+### If you are stuck
+
+The SQL side of a recovery does not need a terminal — it can be worked through
+statement by statement against the project.
 
 ## What the backup does not contain
 
