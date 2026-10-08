@@ -186,25 +186,28 @@ jobs:
             exit 1
           }
 
-      - name: Drop and rebuild the staging schema
+      # Drop and load in ONE transaction, deliberately.
+      #
+      # The first run that got this far dropped the schema successfully and then
+      # failed on the load, which left staging empty with nothing to roll back
+      # to. Wrapping both in a single transaction means a failed load takes the
+      # drop down with it and staging is left exactly as it was.
+      #
+      # The schema is dropped and NOT recreated here, because the dump carries
+      # its own CREATE SCHEMA public. Recreating it first makes the load fail
+      # with "schema already exists" - which is what broke that run.
+      - name: Drop and load, in one transaction
         env:
           TARGET: ${{ secrets.STAGING_DB_URL }}
         run: |
           set -euo pipefail
-          echo "Target database:"
-          # Deliberately no string literal here. Embedding SQL quotes inside
-          # shell quotes is what produced a syntax error on this line instead of
-          # printing the target - and it is an easy mistake to make twice.
+          echo "target:"
           psql "$TARGET" -tAc 'select current_database(), current_user, inet_server_addr()'
-          echo "Dropping the public schema in staging. This is the destructive step."
-          psql "$TARGET" -v ON_ERROR_STOP=1 -c 'drop schema public cascade; create schema public;'
-
-      - name: Load the dump
-        env:
-          TARGET: ${{ secrets.STAGING_DB_URL }}
-        run: |
-          set -euo pipefail
-          psql "$TARGET" -v ON_ERROR_STOP=1 -f dump.sql
+          echo "dropping and reloading public in a single transaction - nothing commits unless the whole load succeeds"
+          psql "$TARGET" -v ON_ERROR_STOP=1 --single-transaction \
+            -c 'drop schema if exists public cascade;' \
+            -f dump.sql
+          echo "committed - if you can read this, the restore worked"
 
       # The point of the drill: did the data come back, and is the app still
       # able to reach it? The second query is the one that catches the missing
