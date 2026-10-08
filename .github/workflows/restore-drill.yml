@@ -98,6 +98,18 @@ jobs:
             echo "::error::STAGING_DB_URL looks like it has an unencoded ':' in the password. Either percent-encode it as %3A, or set the database password to letters and digits only."
             exit 1
           fi
+          # The Direct connection host is IPv6-only on the free tier, and GitHub
+          # runners have no IPv6 at all. Connecting to it fails with "Network is
+          # unreachable", which reads like the database is down rather than like
+          # the wrong host was pasted.
+          hostport="${authority##*@}"
+          host="${hostport%%:*}"
+          echo "host in the connection string: $host"
+          case "$host" in
+            db.*.supabase.co)
+              echo "::error::STAGING_DB_URL uses the Direct connection host ($host), which is IPv6-only. GitHub-hosted runners have no IPv6, so this always fails with 'Network is unreachable'. Use the Session pooler string instead - the dashboard's 'Session pooler' tab - where the host is aws-0-<region>.pooler.supabase.com, the port is still 5432, and the username is postgres.<PROJECT-REF> rather than plain postgres."
+              exit 1 ;;
+          esac
 
       - name: Find the backup artifact
         env:
