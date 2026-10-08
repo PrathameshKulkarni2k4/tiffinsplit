@@ -192,7 +192,10 @@ jobs:
         run: |
           set -euo pipefail
           echo "Target database:"
-          psql "$TARGET" -tAc 'select current_database() || \" @ \" || inet_server_addr()'
+          # Deliberately no string literal here. Embedding SQL quotes inside
+          # shell quotes is what produced a syntax error on this line instead of
+          # printing the target - and it is an easy mistake to make twice.
+          psql "$TARGET" -tAc 'select current_database(), current_user, inet_server_addr()'
           echo "Dropping the public schema in staging. This is the destructive step."
           psql "$TARGET" -v ON_ERROR_STOP=1 -c 'drop schema public cascade; create schema public;'
 
@@ -229,6 +232,13 @@ jobs:
               and grantee in ('anon', 'authenticated', 'service_role')
             group by grantee
             order by grantee;"
+          echo "--- can the app's roles use the schema at all? (USAGE on public) ---"
+          psql "$TARGET" -c "
+            select r.rolname,
+                   has_schema_privilege(r.rolname, 'public', 'USAGE') as can_use_public
+            from pg_roles r
+            where r.rolname in ('anon', 'authenticated', 'service_role')
+            order by r.rolname;"
           echo "--- row level security still on? ---"
           psql "$TARGET" -c "
             select relname, relrowsecurity
