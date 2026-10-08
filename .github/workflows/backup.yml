@@ -5,7 +5,10 @@
 # projects also pause after seven days without database activity -- this job's
 # weekly connection doubles as a keep-alive.
 #
-# Setup: add one repository secret, SUPABASE_DB_URL.
+# Setup: two repository secrets.
+#
+#   1. SUPABASE_DB_URL   - how to connect. Details below.
+#   2. BACKUP_PASSPHRASE - encrypts the dump. See the Encrypt step.
 #
 # It must use the backup_reader role created by
 # supabase/migrations/20261008010000_backup_reader_role.sql, not postgres.
@@ -66,12 +69,21 @@ jobs:
           sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-client-17
-          # Confirm the wrapper picked 17 and not the preinstalled 16.
-          pg_dump --version
-          pg_dump --version | grep -q ' 17\.' || {
-            echo "::error::pg_dump is not version 17; it will refuse to dump the server."
+          # Installing 17 does not change what `pg_dump` resolves to. The runner
+          # already ships a 16 binary earlier on PATH and it wins, which is how
+          # the previous run installed 17 correctly and still reported 16.15.
+          # So call the 17 binary by its full path, and hand it to later steps.
+          PGBIN=/usr/lib/postgresql/17/bin
+          test -x "$PGBIN/pg_dump" || {
+            echo "::error::pg_dump 17 not found at $PGBIN/pg_dump - the client did not install as expected."
             exit 1
           }
+          "$PGBIN/pg_dump" --version
+          "$PGBIN/pg_dump" --version | grep -q ' 17\.' || {
+            echo "::error::$PGBIN/pg_dump is not version 17; it will refuse to dump the server."
+            exit 1
+          }
+          echo "PG_DUMP=$PGBIN/pg_dump" >> "$GITHUB_ENV"
 
       - name: Dump
         env:
@@ -81,7 +93,7 @@ jobs:
           mkdir -p backup
           stamp=$(date -u +%Y-%m-%d)
           file="backup/tiffinsplit-${stamp}.sql"
-          pg_dump "$DB_URL" \
+          "$PG_DUMP" "$DB_URL" \
             --schema=public \
             --no-owner \
             --no-privileges \
@@ -111,6 +123,36 @@ jobs:
             echo "::error::The dump contains no rows. The backup user is probably not bypassing Row Level Security, or lacks SELECT. Check that the secret uses backup_reader and that 20261008010000_backup_reader_role.sql is applied."
             exit 1
           fi
+
+      # A dump of this database contains the group's names and email addresses,
+      # and on a public repository Actions artifacts are downloadable by anyone.
+      #
+      # Making the repository private would fix that, but branch protection is
+      # only free on public repositories: on GitHub Free a private repo loses it,
+      # and the ruleset protecting main would go with it. Encrypting keeps both.
+      #
+      # The artifact is useless without BACKUP_PASSPHRASE. To restore:
+      #   gpg --decrypt tiffinsplit-YYYY-MM-DD.sql.gz.gpg > dump.sql.gz
+      #   gunzip dump.sql.gz
+      - name: Encrypt the dump
+        env:
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PASSPHRASE" ]; then
+            echo "::error::BACKUP_PASSPHRASE is not set. Add it in Settings -> Secrets and variables -> Actions. Use a long random string and keep a copy in a password manager: unlike a database password this cannot be reset, and without it the backups cannot be restored."
+            exit 1
+          fi
+          stamp=$(date -u +%Y-%m-%d)
+          # --passphrase-fd 0 reads the passphrase from stdin so it never appears
+          # in the process list, which --passphrase would.
+          printf '%s' "$PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 \
+            --output "backup/tiffinsplit-${stamp}.sql.gz.gpg" \
+            backup/*.sql.gz
+          # Leave only the encrypted file, so a mistake cannot upload the plain one.
+          rm -f backup/*.sql.gz
+          ls -la backup/
 
       - name: Upload
         uses: actions/upload-artifact@v4
