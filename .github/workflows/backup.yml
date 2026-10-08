@@ -2,20 +2,31 @@
 #
 # Why this exists: Supabase's free tier provides no automatic backups, so a bad
 # migration or an accidental delete has nothing to fall back on. Free-tier
-# projects also pause after seven days without database activity — this job's
+# projects also pause after seven days without database activity -- this job's
 # weekly connection doubles as a keep-alive.
 #
 # Setup: add one repository secret, SUPABASE_DB_URL.
-#   Supabase dashboard -> Project Settings -> Database -> Connection string
-#   -> "Session pooler" (port 5432).
 #
-# Use the Session pooler, not the Direct connection: Supabase's direct host is
-# IPv6-only and GitHub-hosted runners have no IPv6, so a direct string fails
-# with a connection error that looks like a bad password.
+# It must use the backup_reader role created by
+# supabase/migrations/20261008010000_backup_reader_role.sql, not postgres.
+# backup_reader can only SELECT, so if this secret leaked the worst it allows is
+# reading rows a signed-in member could already read. The postgres password can
+# drop tables and is exempt from Row Level Security, so it must not live here.
+#
+# The string comes from the shared pooler in session mode. For a custom role the
+# pooler username is [ROLE].[PROJECT-REF], not the bare role name:
+#
+#   postgresql://backup_reader.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:5432/postgres
+#
+# Take the host from the dashboard's "Session pooler" tab rather than composing
+# it -- the pooler host is not derivable from the region. Session mode is
+# required: the direct connection is IPv6-only on the free tier, and
+# GitHub-hosted runners have no IPv6 at all, so a direct string fails with an
+# error that reads like a wrong password.
 #
 # Scope: the `public` schema, which is the app's data. Auth identities live in
 # `auth`, which Supabase manages and which cannot be restored from a dump
-# anyway — if that were lost, users would sign in again and be re-approved.
+# anyway -- if that were lost, users would sign in again and be re-approved.
 
 name: Backup
 
@@ -59,16 +70,35 @@ jobs:
             --format=plain \
             > "$file"
           gzip "$file"
-          echo "--- backup contents ---"
           ls -la backup/
-          echo "--- row counts sanity check ---"
-          zcat "${file}.gz" | grep -c "^COPY public\." || true
+
+      # A dump that exits zero and contains no rows is the failure this whole
+      # job exists to prevent: RLS applying to the backup role, a missing
+      # grant, or a wrong password all produce a file that looks fine and
+      # restores an empty database. So count the actual rows, per table, and
+      # refuse to call it a success if there are none at all.
+      - name: Verify the dump actually contains data
+        run: |
+          set -euo pipefail
+          # awk always exits 0 here on purpose: a non-zero exit would trip
+          # `set -e` and kill the step before the message below could explain
+          # what went wrong. The decision is made in the shell instead.
+          zcat backup/*.sql.gz | awk '
+            /^COPY public\./ { tbl=$2; n=0; inblk=1; next }
+            inblk && /^\\\.$/ { printf "  %-40s %d\n", tbl, n; total+=n; inblk=0; next }
+            inblk { n++ }
+            END { printf "  %-40s %d\n", "TOTAL", total+0 }
+          ' | tee rowcounts.txt
+          if [ "$(tail -1 rowcounts.txt | awk '{print $NF}')" -eq 0 ]; then
+            echo "::error::The dump contains no rows. The backup user is probably not bypassing Row Level Security, or lacks SELECT. Check that the secret uses backup_reader and that 20261008010000_backup_reader_role.sql is applied."
+            exit 1
+          fi
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: tiffinsplit-backup-${{ github.run_id }}
           path: backup/
-          # Free-tier artifact retention is 90 days — a rolling window, not an
+          # Free-tier artifact retention is 90 days -- a rolling window, not an
           # archive. Plenty for "we broke something last month".
           retention-days: 90
