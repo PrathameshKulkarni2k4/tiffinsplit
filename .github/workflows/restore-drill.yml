@@ -1,0 +1,192 @@
+# Restore drill.
+#
+# Proves that a backup can actually be brought back, which is the one thing the
+# weekly job does not test. It downloads a backup, decrypts it with
+# BACKUP_PASSPHRASE, and loads it into the STAGING database.
+#
+# Why staging: a restore has to start from an empty schema, because the dump
+# contains CREATE TABLE statements. So this job DROPS the public schema in
+# whatever database it points at. Staging is a copy, so losing it costs nothing.
+# Point it at production and it will drop production, which is exactly why the
+# target is a secret that says "staging" rather than a parameter.
+#
+# Setup: one more repository secret, STAGING_DB_URL - the staging project's
+# `postgres` connection string, not backup_reader. This job writes, and
+# backup_reader cannot, by design. Use the shared pooler in session mode, same
+# as the backup job, because the direct connection is IPv6-only and runners
+# have no IPv6.
+#
+# This is a drill, not a recovery plan. It answers "do the backups work?".
+# See BACKUPS.md for what to do about production.
+
+name: Restore drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Backup run ID to restore from. Leave blank for the most recent."
+        required: false
+        default: ""
+      confirm:
+        description: "Type RESTORE-STAGING exactly. This DROPS the public schema in staging."
+        required: true
+        default: ""
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  restore:
+    name: restore into staging
+    runs-on: ubuntu-latest
+
+    steps:
+      # The destructive step below needs to be deliberate, not a mis-tap.
+      - name: Require the confirmation phrase
+        run: |
+          if [ "${{ inputs.confirm }}" != "RESTORE-STAGING" ]; then
+            echo "::error::Confirmation phrase did not match, so nothing was touched. Type RESTORE-STAGING to run this."
+            exit 1
+          fi
+
+      - name: Check the secrets are present
+        env:
+          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          [ -n "$STAGING_DB_URL" ] || {
+            echo "::error::STAGING_DB_URL is not set. It must be the staging project's postgres connection string, because this job writes."
+            exit 1
+          }
+          [ -n "$BACKUP_PASSPHRASE" ] || {
+            echo "::error::BACKUP_PASSPHRASE is not set, so the backup cannot be decrypted."
+            exit 1
+          }
+
+      - name: Find the backup artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}"
+          if [ -n "$RUN_ID" ]; then
+            url="${api}/actions/runs/${RUN_ID}/artifacts"
+          else
+            url="${api}/actions/artifacts?per_page=100"
+          fi
+          curl -sSL -H "Authorization: Bearer $GH_TOKEN" "$url" \
+            | jq -r '.artifacts[]
+                     | select(.name | startswith("tiffinsplit-backup-"))
+                     | "\(.id) \(.name) \(.created_at)"' \
+            | sort -k3 | tail -1 > artifact.txt
+          cat artifact.txt
+          [ -s artifact.txt ] || {
+            echo "::error::No backup artifact found. Run the Backup workflow first."
+            exit 1
+          }
+          echo "ARTIFACT_ID=$(awk '{print $1}' artifact.txt)" >> "$GITHUB_ENV"
+          echo "ARTIFACT_NAME=$(awk '{print $2}' artifact.txt)" >> "$GITHUB_ENV"
+
+      - name: Download it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p backup
+          curl -sSL -H "Authorization: Bearer $GH_TOKEN" -o artifact.zip \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip"
+          unzip -o -q artifact.zip -d backup
+          echo "contents of ${ARTIFACT_NAME}:"
+          find backup -type f -exec ls -la {} \;
+          ls backup/*.gpg >/dev/null 2>&1 || {
+            echo "::error::No .gpg file in the artifact. Expected an encrypted dump."
+            exit 1
+          }
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+          psql --version
+
+      - name: Decrypt
+        env:
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$PASSPHRASE" | gpg --batch --yes --quiet --passphrase-fd 0 \
+            --decrypt backup/*.gpg > dump.sql.gz
+          gunzip dump.sql.gz
+          ls -la dump.sql
+
+      # Never let an empty dump reach a drop-and-load. If decryption silently
+      # produced nothing, the next step would still wipe staging and leave it
+      # blank.
+      - name: Verify the dump has rows before touching anything
+        run: |
+          set -euo pipefail
+          total=$(awk '
+            /^COPY public\./ { inblk=1; next }
+            inblk && /^\\\.$/ { inblk=0; next }
+            inblk { n++ }
+            END { print n+0 }
+          ' dump.sql)
+          echo "rows found in the dump: $total"
+          [ "$total" -gt 0 ] || {
+            echo "::error::The dump decrypted but contains no rows. Refusing to drop the staging schema for an empty restore."
+            exit 1
+          }
+
+      - name: Drop and rebuild the staging schema
+        env:
+          TARGET: ${{ secrets.STAGING_DB_URL }}
+        run: |
+          set -euo pipefail
+          echo "Target database:"
+          psql "$TARGET" -tAc 'select current_database() || \" @ \" || inet_server_addr()'
+          echo "Dropping the public schema in staging. This is the destructive step."
+          psql "$TARGET" -v ON_ERROR_STOP=1 -c 'drop schema public cascade; create schema public;'
+
+      - name: Load the dump
+        env:
+          TARGET: ${{ secrets.STAGING_DB_URL }}
+        run: |
+          set -euo pipefail
+          psql "$TARGET" -v ON_ERROR_STOP=1 -f dump.sql
+
+      # The point of the drill: did the data come back, and is the app still
+      # able to reach it? The second query is the one that catches the missing
+      # GRANTs, which look exactly like a successful restore until the app
+      # connects and sees nothing.
+      - name: What actually landed
+        env:
+          TARGET: ${{ secrets.STAGING_DB_URL }}
+        run: |
+          set -euo pipefail
+          echo "--- rows restored ---"
+          psql "$TARGET" -c "
+            select 'users' as table, count(*) from public.users
+            union all select 'messes', count(*) from public.messes
+            union all select 'orders', count(*) from public.orders
+            union all select 'order_shares', count(*) from public.order_shares
+            union all select 'settlements', count(*) from public.settlements
+            union all select 'vendor_payments', count(*) from public.vendor_payments
+            order by 1;"
+          echo "--- can the app's roles still read them? (missing rows here = missing GRANTs) ---"
+          psql "$TARGET" -c "
+            select grantee, count(*) as tables
+            from information_schema.role_table_grants
+            where table_schema = 'public'
+              and grantee in ('anon', 'authenticated', 'service_role')
+            group by grantee
+            order by grantee;"
+          echo "--- row level security still on? ---"
+          psql "$TARGET" -c "
+            select relname, relrowsecurity
+            from pg_class c join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'public' and c.relkind = 'r'
+            order by relname;"
