@@ -1,0 +1,74 @@
+# Weekly database backup.
+#
+# Why this exists: Supabase's free tier provides no automatic backups, so a bad
+# migration or an accidental delete has nothing to fall back on. Free-tier
+# projects also pause after seven days without database activity — this job's
+# weekly connection doubles as a keep-alive.
+#
+# Setup: add one repository secret, SUPABASE_DB_URL.
+#   Supabase dashboard -> Project Settings -> Database -> Connection string
+#   -> "Session pooler" (port 5432).
+#
+# Use the Session pooler, not the Direct connection: Supabase's direct host is
+# IPv6-only and GitHub-hosted runners have no IPv6, so a direct string fails
+# with a connection error that looks like a bad password.
+#
+# Scope: the `public` schema, which is the app's data. Auth identities live in
+# `auth`, which Supabase manages and which cannot be restored from a dump
+# anyway — if that were lost, users would sign in again and be re-approved.
+
+name: Backup
+
+on:
+  schedule:
+    # 02:00 UTC every Sunday. Scheduled runs can be delayed at busy times.
+    - cron: "0 2 * * 0"
+  # Manual button, so you can take a dump before a risky migration.
+  workflow_dispatch:
+
+jobs:
+  dump:
+    name: dump public schema
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check the secret is present
+        run: |
+          if [ -z "${{ secrets.SUPABASE_DB_URL }}" ]; then
+            echo "::error::SUPABASE_DB_URL is not set. Add it in Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Dump
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p backup
+          stamp=$(date -u +%Y-%m-%d)
+          file="backup/tiffinsplit-${stamp}.sql"
+          pg_dump "$DB_URL" \
+            --schema=public \
+            --no-owner \
+            --no-privileges \
+            --format=plain \
+            > "$file"
+          gzip "$file"
+          echo "--- backup contents ---"
+          ls -la backup/
+          echo "--- row counts sanity check ---"
+          zcat "${file}.gz" | grep -c "^COPY public\." || true
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiffinsplit-backup-${{ github.run_id }}
+          path: backup/
+          # Free-tier artifact retention is 90 days — a rolling window, not an
+          # archive. Plenty for "we broke something last month".
+          retention-days: 90
