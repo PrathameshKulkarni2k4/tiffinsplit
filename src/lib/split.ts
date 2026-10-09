@@ -162,3 +162,39 @@ export function groupsFromOrders(orders: LoggedOrder[]): TodayGroup[] {
 
   return groups;
 }
+
+/**
+ * The mess each person most recently ate from, given orders newest-first.
+ *
+ * A person eats from exactly one mess a day, so this is what decides which
+ * mess's crowd they belong to when two messes could both claim them.
+ */
+export function lastMessByUser(ordersNewestFirst: LoggedOrder[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const o of ordersNewestFirst) {
+    for (const s of o.order_shares ?? []) {
+      if (!(s.user_id in out)) out[s.user_id] = o.mess_id;
+    }
+  }
+  return out;
+}
+
+/**
+ * Trim a group to the people who actually belong to it.
+ *
+ * Without this, the same names get pre-ticked in every mess - someone who ate
+ * from one mess on Monday and another on Tuesday appears in both - which the
+ * app forbids and the server rejects on submit. The odd user is dropped too if
+ * they are no longer in the group, so a stale half-pick cannot survive.
+ */
+export function keepOwnPeople(
+  group: TodayGroup,
+  lastMess: Record<string, string>
+): TodayGroup {
+  const present = group.present.filter((u) => lastMess[u] === group.messId);
+  return {
+    ...group,
+    present,
+    oddUser: group.oddUser && present.includes(group.oddUser) ? group.oddUser : null,
+  };
+}

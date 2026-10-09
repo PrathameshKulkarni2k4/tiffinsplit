@@ -39,23 +39,40 @@ export default function TodayForm({
   messes,
   members,
   loggedMessesByDate,
-  lastGroups,
+  usualByMess,
 }: {
   messes: Mess[];
   members: AppUser[];
   loggedMessesByDate: Record<string, string[]>;
-  lastGroups: TodayGroup[];
+  usualByMess: Record<string, TodayGroup>;
 }) {
+  // Nobody eats from two messes in a day. The page already assigns each person
+  // to the mess they last ate from, so a mess's own crowd never overlaps - but
+  // a mess with no history falls back to "everyone", and that must not re-tick
+  // someone another mess has already claimed.
+  const claimed = new Set(Object.values(usualByMess).flatMap((g) => g.present));
+  const unclaimed = members.filter((m) => !claimed.has(m.id)).map((m) => m.id);
+
+  // The usual group for a mess: its last crowd, how it split, and who took the
+  // half. Falls back to whoever is not already claimed elsewhere, rather than
+  // showing an empty group or duplicating people across messes.
+  const usualFor = (messId: string): TodayGroup => {
+    const usual = usualByMess[messId];
+    return {
+      messId,
+      present: usual?.present?.length ? [...usual.present] : [...unclaimed],
+      mode: usual?.mode ?? "pairs",
+      oddUser: usual?.oddUser ?? null,
+    };
+  };
+
+  // The form's starting point, in one place so the initial state and Reset
+  // cannot drift apart.
+  const startingGroups = (): TodayGroup[] => [usualFor(messes[0]?.id ?? "")];
+
   const [date, setDate] = useState(todayISO());
   const [allowDuplicate, setAllowDuplicate] = useState(false);
-  const [groups, setGroups] = useState<TodayGroup[]>([
-    {
-      messId: messes[0]?.id ?? "",
-      present: members.map((m) => m.id),
-      mode: "pairs",
-      oddUser: null,
-    },
-  ]);
+  const [groups, setGroups] = useState<TodayGroup[]>(startingGroups);
 
   const nameOf = useMemo(() => {
     const map: Record<string, string> = {};
@@ -94,13 +111,17 @@ export default function TodayForm({
   const patch = (gi: number, next: Partial<TodayGroup>) =>
     setGroups((gs) => gs.map((g, i) => (i === gi ? { ...g, ...next } : g)));
 
-  // Re-use the last batch as a starting point. Most days are the same people at
-  // the same mess, so this turns a multi-step form into one tap plus a tweak.
-  function applyLast() {
-    setGroups(lastGroups.map((g) => ({ ...g, present: [...g.present] })));
+  // Re-use the starting point. Most days are the same people at the same mess,
+  // so this is the escape hatch for when ticking and unticking has gone wrong.
+  function applyUsual() {
+    setGroups(startingGroups());
   }
 
-  const lastSummary = lastGroups
+  // Only offered once the form has actually been changed - a Reset button on an
+  // untouched form is noise.
+  const changed = JSON.stringify(groups) !== JSON.stringify(startingGroups());
+
+  const usualSummary = startingGroups()
     .map(
       (g) =>
         `${g.present.length} ${g.present.length === 1 ? "person" : "people"} · ${
@@ -112,7 +133,15 @@ export default function TodayForm({
   function addGroup() {
     const used = new Set(groups.map((g) => g.messId));
     const next = messes.find((m) => !used.has(m.id)) ?? messes[0];
-    setGroups((gs) => [...gs, { messId: next.id, present: [], mode: "pairs", oddUser: null }]);
+
+    // Someone already in another mess cannot be added again, and if that
+    // removes the half-taker, drop the pick so the form asks again.
+    const taken = new Set(groups.flatMap((g) => g.present));
+    const group = usualFor(next.id);
+    const present = group.present.filter((u) => !taken.has(u));
+    const oddUser = group.oddUser && present.includes(group.oddUser) ? group.oddUser : null;
+
+    setGroups((gs) => [...gs, { ...group, present, oddUser }]);
   }
 
   function removeGroup(gi: number) {
@@ -156,15 +185,15 @@ export default function TodayForm({
         />
       </label>
 
-      {lastGroups.length > 0 && (
+      {changed && (
         <Card className="mb-4 px-4 py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="font-semibold">Same as last time</div>
-              <div className="text-sm text-muted-foreground">{lastSummary}</div>
+              <div className="font-semibold">Reset to the usual</div>
+              <div className="text-sm text-muted-foreground">{usualSummary}</div>
             </div>
-            <Button type="button" variant="outline" onClick={applyLast} className="h-11 md:h-9">
-              Fill it in
+            <Button type="button" variant="outline" onClick={applyUsual} className="h-11 md:h-9">
+              Reset
             </Button>
           </div>
         </Card>

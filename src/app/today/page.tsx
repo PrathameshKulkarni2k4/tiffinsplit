@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMesses, getMembers } from "@/lib/data";
-import { groupsFromOrders, type LoggedOrder, type TodayGroup } from "@/lib/split";
+import { groupsFromOrders, keepOwnPeople, lastMessByUser, type LoggedOrder, type TodayGroup } from "@/lib/split";
 import TodayForm from "./TodayForm";
 import { Card } from "@/components/ui/card";
 
@@ -33,25 +33,53 @@ export default async function TodayPage() {
     loggedMessesByDate[d].push(m);
   }
 
-  // The most recently logged batch, so the form can offer "same as last time".
-  // Two small queries rather than one clever one: find the newest batch id, then
-  // read that batch's orders with their sharers.
-  const { data: lastBatch } = await supabase
+  // Who usually eats from each mess, and how that day split - taken from that
+  // mess's most recent batch, so the form opens ready to confirm rather than
+  // needing the crowd re-picked and the half re-assigned every day.
+  //
+  // groupsFromOrders rebuilds the whole group, not just the people: it infers
+  // the split mode and works out who took the half alone. Carrying only the
+  // names across was the bug - it lost all-half, and lost whoever had the half.
+  const { data: recent } = await supabase
     .from("orders")
-    .select("batch_id")
-    .not("batch_id", "is", null)
+    .select("mess_id, batch_id, tiffin_type, created_at, order_shares(user_id)")
     .order("created_at", { ascending: false })
-    .limit(1);
-  const lastBatchId = (lastBatch?.[0]?.batch_id as string | undefined) ?? null;
+    .limit(300);
 
-  let lastGroups: TodayGroup[] = [];
-  if (lastBatchId) {
-    const { data: lastOrders } = await supabase
-      .from("orders")
-      .select("mess_id, tiffin_type, order_shares(user_id)")
-      .eq("batch_id", lastBatchId)
-      .order("created_at", { ascending: true });
-    lastGroups = groupsFromOrders((lastOrders ?? []) as LoggedOrder[]);
+  const newestBatchForMess: Record<string, string> = {};
+  const ordersByMess: Record<string, LoggedOrder[]> = {};
+  for (const o of recent ?? []) {
+    const m = o.mess_id as string;
+    const b = (o.batch_id as string | null) ?? "";
+    if (!(m in newestBatchForMess)) {
+      newestBatchForMess[m] = b;
+      ordersByMess[m] = [];
+    }
+    if (newestBatchForMess[m] !== b) continue; // an older batch for this mess
+    ordersByMess[m].push({
+      mess_id: m,
+      tiffin_type: o.tiffin_type as "full" | "half",
+      order_shares: (o.order_shares ?? []) as { user_id: string }[],
+    });
+  }
+
+  // Every order here, newest first, shaped for the helpers below.
+  const recentLogged: LoggedOrder[] = (recent ?? []).map((o) => ({
+    mess_id: o.mess_id as string,
+    tiffin_type: o.tiffin_type as "full" | "half",
+    order_shares: (o.order_shares ?? []) as { user_id: string }[],
+  }));
+
+  // A person eats from one mess a day, so each person is assigned to the mess
+  // they last ate from. Without this, someone who ate at one mess on Monday and
+  // another on Tuesday is pre-ticked in both - which the app forbids and the
+  // server rejects, so the form would open unable to submit.
+  const lastMess = lastMessByUser(recentLogged);
+
+  const usualByMess: Record<string, TodayGroup> = {};
+  for (const [m, orders] of Object.entries(ordersByMess)) {
+    const rebuilt = groupsFromOrders(orders)[0];
+    if (rebuilt) usualByMess[m] = keepOwnPeople(rebuilt, lastMess);
   }
 
   return (
@@ -61,7 +89,7 @@ export default async function TodayPage() {
         messes={messes}
         members={members}
         loggedMessesByDate={loggedMessesByDate}
-        lastGroups={lastGroups}
+        usualByMess={usualByMess}
       />
     </>
   );
