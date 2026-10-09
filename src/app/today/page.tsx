@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMesses, getMembers } from "@/lib/data";
-import { groupsFromOrders, type LoggedOrder, type TodayGroup } from "@/lib/split";
+import { groupsFromOrders, keepOwnPeople, lastMessByUser, type LoggedOrder, type TodayGroup } from "@/lib/split";
 import TodayForm from "./TodayForm";
 import { Card } from "@/components/ui/card";
 
@@ -63,10 +63,23 @@ export default async function TodayPage() {
     });
   }
 
+  // Every order here, newest first, shaped for the helpers below.
+  const recentLogged: LoggedOrder[] = (recent ?? []).map((o) => ({
+    mess_id: o.mess_id as string,
+    tiffin_type: o.tiffin_type as "full" | "half",
+    order_shares: (o.order_shares ?? []) as { user_id: string }[],
+  }));
+
+  // A person eats from one mess a day, so each person is assigned to the mess
+  // they last ate from. Without this, someone who ate at one mess on Monday and
+  // another on Tuesday is pre-ticked in both - which the app forbids and the
+  // server rejects, so the form would open unable to submit.
+  const lastMess = lastMessByUser(recentLogged);
+
   const usualByMess: Record<string, TodayGroup> = {};
   for (const [m, orders] of Object.entries(ordersByMess)) {
     const rebuilt = groupsFromOrders(orders)[0];
-    if (rebuilt) usualByMess[m] = rebuilt;
+    if (rebuilt) usualByMess[m] = keepOwnPeople(rebuilt, lastMess);
   }
 
   return (

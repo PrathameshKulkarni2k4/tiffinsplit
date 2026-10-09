@@ -4,9 +4,12 @@ import {
   planTotal,
   planPerPerson,
   groupsFromOrders,
+  lastMessByUser,
+  keepOwnPeople,
   type PlannedOrder,
   type LoggedOrder,
   type SplitMode,
+  type TodayGroup,
 } from "@/lib/split";
 
 const A = "aaa", B = "bbb", C = "ccc", D = "ddd", E = "eee";
@@ -171,5 +174,51 @@ describe("groupsFromOrders — rebuilding what was logged", () => {
       expect(planPerPerson(again.orders)).toEqual(planPerPerson(plan.orders));
       expect(planTotal(again.orders)).toBe(planTotal(plan.orders));
     }
+  });
+});
+
+describe("one person, one mess", () => {
+  it("assigns each person to the mess they most recently ate from", () => {
+    const orders: LoggedOrder[] = [
+      // newest first
+      { mess_id: "m2", tiffin_type: "full", order_shares: [{ user_id: A }, { user_id: B }] },
+      { mess_id: "m1", tiffin_type: "full", order_shares: [{ user_id: A }, { user_id: C }] },
+    ];
+    expect(lastMessByUser(orders)).toEqual({ [A]: "m2", [B]: "m2", [C]: "m1" });
+  });
+
+  it("trims a group to the people who belong to it", () => {
+    const last = { [A]: "m2", [B]: "m2", [C]: "m1" };
+    const group: TodayGroup = { messId: "m1", present: [A, B, C], mode: "pairs", oddUser: B };
+    const trimmed = keepOwnPeople(group, last);
+    expect(trimmed.present).toEqual([C]);
+    expect(trimmed.oddUser).toBeNull(); // the half-taker left with them
+  });
+
+  it("keeps the half-taker when they still belong", () => {
+    const last = { [A]: "m1", [B]: "m1" };
+    const group: TodayGroup = { messId: "m1", present: [A, B], mode: "pairs", oddUser: A };
+    expect(keepOwnPeople(group, last).oddUser).toBe(A);
+  });
+
+  // The bug reported from the app: every mess opened with all nine names ticked.
+  it("two messes never claim the same person", () => {
+    const orders: LoggedOrder[] = [
+      { mess_id: "m2", tiffin_type: "half", order_shares: [{ user_id: A }] },
+      { mess_id: "m1", tiffin_type: "full", order_shares: [{ user_id: A }, { user_id: B }] },
+    ];
+    const last = lastMessByUser(orders);
+    const m1 = keepOwnPeople(
+      { messId: "m1", present: [A, B], mode: "pairs", oddUser: null },
+      last
+    );
+    const m2 = keepOwnPeople(
+      { messId: "m2", present: [A], mode: "pairs", oddUser: null },
+      last
+    );
+    const everyone = [...m1.present, ...m2.present];
+    expect(everyone.length).toBe(new Set(everyone).size); // no one appears twice
+    expect(m1.present).toEqual([B]);
+    expect(m2.present).toEqual([A]);
   });
 });

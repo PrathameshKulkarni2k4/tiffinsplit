@@ -46,14 +46,21 @@ export default function TodayForm({
   loggedMessesByDate: Record<string, string[]>;
   usualByMess: Record<string, TodayGroup>;
 }) {
+  // Nobody eats from two messes in a day. The page already assigns each person
+  // to the mess they last ate from, so a mess's own crowd never overlaps - but
+  // a mess with no history falls back to "everyone", and that must not re-tick
+  // someone another mess has already claimed.
+  const claimed = new Set(Object.values(usualByMess).flatMap((g) => g.present));
+  const unclaimed = members.filter((m) => !claimed.has(m.id)).map((m) => m.id);
+
   // The usual group for a mess: its last crowd, how it split, and who took the
-  // half. Falls back to everyone in pairs if this mess has no history yet,
-  // rather than showing an empty group.
+  // half. Falls back to whoever is not already claimed elsewhere, rather than
+  // showing an empty group or duplicating people across messes.
   const usualFor = (messId: string): TodayGroup => {
     const usual = usualByMess[messId];
     return {
       messId,
-      present: usual?.present?.length ? [...usual.present] : members.map((m) => m.id),
+      present: usual?.present?.length ? [...usual.present] : [...unclaimed],
       mode: usual?.mode ?? "pairs",
       oddUser: usual?.oddUser ?? null,
     };
@@ -126,7 +133,15 @@ export default function TodayForm({
   function addGroup() {
     const used = new Set(groups.map((g) => g.messId));
     const next = messes.find((m) => !used.has(m.id)) ?? messes[0];
-    setGroups((gs) => [...gs, usualFor(next.id)]);
+
+    // Someone already in another mess cannot be added again, and if that
+    // removes the half-taker, drop the pick so the form asks again.
+    const taken = new Set(groups.flatMap((g) => g.present));
+    const group = usualFor(next.id);
+    const present = group.present.filter((u) => !taken.has(u));
+    const oddUser = group.oddUser && present.includes(group.oddUser) ? group.oddUser : null;
+
+    setGroups((gs) => [...gs, { ...group, present, oddUser }]);
   }
 
   function removeGroup(gi: number) {
