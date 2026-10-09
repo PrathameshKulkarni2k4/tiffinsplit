@@ -39,13 +39,11 @@ export default function TodayForm({
   messes,
   members,
   loggedMessesByDate,
-  lastGroups,
   usualByMess,
 }: {
   messes: Mess[];
   members: AppUser[];
   loggedMessesByDate: Record<string, string[]>;
-  lastGroups: TodayGroup[];
   usualByMess: Record<string, string[]>;
 }) {
   // The crowd for a mess: whoever ate from it last time, or everyone if this
@@ -53,16 +51,20 @@ export default function TodayForm({
   const usualFor = (messId: string) =>
     usualByMess[messId]?.length ? [...usualByMess[messId]] : members.map((m) => m.id);
 
-  const [date, setDate] = useState(todayISO());
-  const [allowDuplicate, setAllowDuplicate] = useState(false);
-  const [groups, setGroups] = useState<TodayGroup[]>([
+  // The form's starting point, in one place so the initial state and Reset
+  // cannot drift apart.
+  const startingGroups = (): TodayGroup[] => [
     {
       messId: messes[0]?.id ?? "",
       present: usualFor(messes[0]?.id ?? ""),
       mode: "pairs",
       oddUser: null,
     },
-  ]);
+  ];
+
+  const [date, setDate] = useState(todayISO());
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
+  const [groups, setGroups] = useState<TodayGroup[]>(startingGroups);
 
   const nameOf = useMemo(() => {
     const map: Record<string, string> = {};
@@ -101,13 +103,17 @@ export default function TodayForm({
   const patch = (gi: number, next: Partial<TodayGroup>) =>
     setGroups((gs) => gs.map((g, i) => (i === gi ? { ...g, ...next } : g)));
 
-  // Re-use the last batch as a starting point. Most days are the same people at
-  // the same mess, so this turns a multi-step form into one tap plus a tweak.
-  function applyLast() {
-    setGroups(lastGroups.map((g) => ({ ...g, present: [...g.present] })));
+  // Re-use the starting point. Most days are the same people at the same mess,
+  // so this is the escape hatch for when ticking and unticking has gone wrong.
+  function applyUsual() {
+    setGroups(startingGroups());
   }
 
-  const lastSummary = lastGroups
+  // Only offered once the form has actually been changed - a Reset button on an
+  // untouched form is noise.
+  const changed = JSON.stringify(groups) !== JSON.stringify(startingGroups());
+
+  const usualSummary = startingGroups()
     .map(
       (g) =>
         `${g.present.length} ${g.present.length === 1 ? "person" : "people"} · ${
@@ -166,15 +172,15 @@ export default function TodayForm({
         />
       </label>
 
-      {lastGroups.length > 0 && (
+      {changed && (
         <Card className="mb-4 px-4 py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="font-semibold">Same as last time</div>
-              <div className="text-sm text-muted-foreground">{lastSummary}</div>
+              <div className="font-semibold">Reset to the usual</div>
+              <div className="text-sm text-muted-foreground">{usualSummary}</div>
             </div>
-            <Button type="button" variant="outline" onClick={applyLast} className="h-11 md:h-9">
-              Fill it in
+            <Button type="button" variant="outline" onClick={applyUsual} className="h-11 md:h-9">
+              Reset
             </Button>
           </div>
         </Card>
