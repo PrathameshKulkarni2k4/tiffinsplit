@@ -5,11 +5,19 @@ import { cn } from "@/lib/utils";
 /**
  * Table primitives. The wrapper handles horizontal overflow, which is what
  * the old `.table-wrap` class did on narrow screens.
+ *
+ * `tabular-nums` is set here as well as on the body: a table is where figures
+ * sit in a column and line up, so it is the case that most needs it, and it
+ * keeps the intent visible at the point of use.
  */
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
     <div className="relative w-full overflow-x-auto">
-      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+      <table
+        ref={ref}
+        className={cn("w-full caption-bottom text-sm tabular-nums", className)}
+        {...props}
+      />
     </div>
   ),
 );
