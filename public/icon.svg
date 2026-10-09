@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="TiffinSplit">
+  <!-- A tiffin carrier. The tiers are drawn as three separate bars with real
+       gaps rather than one body scored with lines - as lines it read as a
+       briefcase, because a briefcase is exactly a rectangle with a handle.
+       Separating the tiers is what makes it a stack. The handle's endpoints
+       sit on the lid's top edge so it connects instead of floating. -->
+  <rect width="64" height="64" rx="14" fill="#0f766e"/>
+  <path d="M25 17a7 7 0 0 1 14 0" fill="none" stroke="#ffffff" stroke-width="3.6" stroke-linecap="round"/>
+  <rect x="15" y="17" width="34" height="9" rx="3.2" fill="#ffffff"/>
+  <rect x="15" y="28.5" width="34" height="9" rx="3.2" fill="#ffffff"/>
+  <rect x="15" y="40" width="34" height="9" rx="3.2" fill="#ffffff"/>
+</svg>

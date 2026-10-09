@@ -19,6 +19,8 @@ import {
 
 type SearchParams = { month?: string };
 
+export const metadata = { title: "Messes owed" };
+
 export default async function VendorsPage({ searchParams }: { searchParams?: SearchParams }) {
   const month = typeof searchParams?.month === "string" ? searchParams.month : currentMonthLabel();
   const [orders, messes] = await Promise.all([getMonthOrders(month), getMesses(false)]);

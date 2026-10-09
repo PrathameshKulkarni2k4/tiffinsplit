@@ -1,15 +1,16 @@
+import { PageHeaderSkeleton, StatRowSkeleton, TableSkeleton } from "@/components/ui/skeleton";
+
+// Matches the dashboard: header, three stat tiles, then the two tables.
+// The previous version was one generic shape reused on every route, so the real
+// content landed in a different layout than the placeholder and the page jumped.
 export default function Loading() {
   return (
-    <div className="pt-1.5">
-      <div className="mb-2.5 h-[30px] w-[45%] animate-pulse rounded-xl bg-muted" />
-      <div className="mb-5 h-[15px] w-[30%] animate-pulse rounded-xl bg-muted" />
-      <div className="mb-[18px] grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3.5">
-        <div className="h-[78px] animate-pulse rounded-xl bg-muted" />
-        <div className="h-[78px] animate-pulse rounded-xl bg-muted" />
-        <div className="h-[78px] animate-pulse rounded-xl bg-muted" />
-      </div>
-      <div className="mb-4 h-[140px] animate-pulse rounded-xl bg-muted" />
-      <div className="mb-4 h-[140px] animate-pulse rounded-xl bg-muted" />
-    </div>
+    <>
+      <PageHeaderSkeleton />
+      <StatRowSkeleton count={3} />
+      <TableSkeleton rows={6} cols={2} />
+      <div className="h-4" />
+      <TableSkeleton rows={5} cols={3} />
+    </>
   );
 }

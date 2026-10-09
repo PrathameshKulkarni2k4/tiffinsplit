@@ -16,6 +16,8 @@ import {
 
 type SearchParams = { month?: string };
 
+export const metadata = { title: "Bill" };
+
 export default async function PersonBillPage({
   params,
   searchParams,

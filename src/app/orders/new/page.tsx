@@ -3,6 +3,8 @@ import { getMesses, getMembers } from "@/lib/data";
 import OrderForm from "../OrderForm";
 import { Card } from "@/components/ui/card";
 
+export const metadata = { title: "Log a tiffin" };
+
 export default async function NewOrderPage() {
   const [messes, members] = await Promise.all([getMesses(true), getMembers()]);
 

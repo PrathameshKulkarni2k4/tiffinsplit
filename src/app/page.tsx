@@ -39,6 +39,8 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+export const metadata = { title: "Dashboard" };
+
 export default async function DashboardPage({ searchParams }: { searchParams?: SearchParams }) {
   const user = await getSessionUser();
   const month = typeof searchParams?.month === "string" ? searchParams.month : currentMonthLabel();

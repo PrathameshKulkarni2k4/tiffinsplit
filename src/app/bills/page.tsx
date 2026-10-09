@@ -5,6 +5,8 @@ import { perPerson, grandTotal } from "@/lib/aggregate";
 import { money, prettyMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import MonthPicker from "@/components/MonthPicker";
+import ShareBar from "@/components/ShareBar";
+import Avatar from "@/components/Avatar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -16,6 +18,8 @@ import {
 } from "@/components/ui/table";
 
 type SearchParams = { month?: string };
+
+export const metadata = { title: "Bills" };
 
 export default async function BillsPage({ searchParams }: { searchParams?: SearchParams }) {
   const month = typeof searchParams?.month === "string" ? searchParams.month : currentMonthLabel();
@@ -52,6 +56,22 @@ export default async function BillsPage({ searchParams }: { searchParams?: Searc
         <MonthPicker month={month} />
       </div>
 
+      {orders.length > 0 && (
+        <div className="mb-5">
+          <ShareBar
+            month={month}
+            monthLabel={prettyMonth(month)}
+            lines={members
+              .filter((m) => totals[m.id])
+              .map((m) => ({
+                name: names[m.id] ?? "—",
+                amount: money(totals[m.id] ?? 0),
+              }))}
+            total={money(total)}
+          />
+        </div>
+      )}
+
       {/* A month with nothing in it used to render one empty card per member -
           six identical "No orders this month" panels stacked down the screen,
           which reads as a broken page. One honest empty state says more. */}
@@ -73,7 +93,11 @@ export default async function BillsPage({ searchParams }: { searchParams?: Searc
         return (
           <Card key={m.id} className="mb-[18px] px-5 py-[18px]">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Link href={`/bills/${m.id}?month=${month}`} className="inline-block py-0.5 font-bold">
+              <Link
+                href={`/bills/${m.id}?month=${month}`}
+                className="inline-flex items-center gap-2.5 py-0.5 font-bold hover:no-underline"
+              >
+                <Avatar name={names[m.id] ?? "?"} size="sm" />
                 {names[m.id]}
               </Link>
               <span className="fig font-semibold">{money(totals[m.id] ?? 0)}</span>

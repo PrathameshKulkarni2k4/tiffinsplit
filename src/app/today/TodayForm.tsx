@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { planGroup, planTotal, type PlannedOrder, type TodayGroup } from "@/lib/split";
 import { money, todayISO } from "@/lib/format";
+import { Plus } from "lucide-react";
+
 import type { AppUser, Mess } from "@/lib/types";
 import SubmitButton from "@/components/SubmitButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -266,15 +268,19 @@ export default function TodayForm({
             </div>
 
             <div className={LABEL}>How are we splitting?</div>
-            <div className="flex overflow-hidden rounded-lg border">
+            {/* A segmented control, not two buttons. Two filled buttons side by
+                side read as two separate choices; an inset track with the
+                active segment raised reads as one setting with two values,
+                which is what this is. */}
+            <div className="flex gap-1 rounded-lg border bg-muted p-1">
               <button
                 type="button"
                 aria-pressed={g.mode === "pairs"}
                 className={cn(
-                  "min-h-[44px] flex-1 px-2 py-[11px] text-[0.86rem] font-semibold",
+                  "min-h-[40px] flex-1 rounded-md px-2 py-[9px] text-[0.86rem] font-semibold transition-[background-color,color,box-shadow] duration-150 ease-ease",
                   g.mode === "pairs"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card text-muted-foreground",
+                    ? "bg-card text-foreground shadow-card"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => patch(gi, { mode: "pairs" })}
               >
@@ -284,10 +290,10 @@ export default function TodayForm({
                 type="button"
                 aria-pressed={g.mode === "all-half"}
                 className={cn(
-                  "min-h-[44px] flex-1 px-2 py-[11px] text-[0.86rem] font-semibold",
+                  "min-h-[40px] flex-1 rounded-md px-2 py-[9px] text-[0.86rem] font-semibold transition-[background-color,color,box-shadow] duration-150 ease-ease",
                   g.mode === "all-half"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card text-muted-foreground",
+                    ? "bg-card text-foreground shadow-card"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => patch(gi, { mode: "all-half" })}
               >
@@ -369,11 +375,12 @@ export default function TodayForm({
       <Button
         type="button"
         variant="outline"
-        className="w-full"
+        className="w-full border-dashed hover:border-primary/50 hover:bg-accent hover:text-accent-foreground"
         onClick={addGroup}
         disabled={groups.length >= messes.length}
       >
-        + Add another mess
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Add another mess
       </Button>
 
       <div className="flex items-baseline justify-between px-1 pb-1.5 pt-3.5 text-[1.05rem] font-bold">

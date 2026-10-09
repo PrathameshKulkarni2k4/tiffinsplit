@@ -65,6 +65,9 @@ export async function deleteOrder(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateAll();
+  // Deleting used to leave no trace on screen at all - the row simply vanished.
+  // Now the redirect carries the confirmation back.
+  redirect("/orders?deleted=1");
 }
 
 /** Undo a whole "Confirm today's lunch" batch. */
@@ -77,5 +80,5 @@ export async function undoBatch(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateAll();
-  redirect("/orders");
+  redirect("/orders?undone=1");
 }

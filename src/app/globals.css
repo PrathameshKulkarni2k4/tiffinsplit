@@ -49,6 +49,59 @@
   --ui-good: 142.4 71.8% 29.2%;
   /* 4.92:1 on a card. */
   --ui-warn: 35.5 91.7% 32.9%;
+
+  /* Tells the browser to draw its own furniture - the select popup, the
+     date picker, scrollbars, form autofill - in the light scheme. Without
+     this the native controls stay light even when the page does not. */
+  color-scheme: light;
+}
+
+/* ------------------------------------------------------------------
+   Dark mode.
+
+   Not an inversion of the light palette. Dark interfaces need less
+   saturation, more separation, and a brand colour light enough to carry
+   weight against a near-black ground - so the teal moves from 26% lightness
+   to 64%, and the shadow that gave cards their edge in light mode is
+   replaced by a brighter border, because a shadow on black is invisible.
+
+   Every value below was measured, not eyeballed:
+
+     foreground on background        16.29:1
+     foreground on a card            15.24:1
+     muted text on background         7.58:1
+     muted text on a card             7.09:1
+     button label on primary          9.92:1
+     selected-chip text on its tint   8.16:1
+     good / warn / destructive       10.38 / 10.71 / 7.50:1
+
+   The ground is warm (hue 30) rather than neutral grey, so switching to
+   dark does not change the app's temperature - only its light level.
+   ------------------------------------------------------------------ */
+.dark {
+  color-scheme: dark;
+
+  --ui-background: 30 22.2% 7.1%;
+  --ui-foreground: 35 35.3% 93.3%;
+  --ui-card: 30 20% 9.8%;
+  --ui-card-foreground: 35 35.3% 93.3%;
+  --ui-popover: 30 20% 11%;
+  --ui-popover-foreground: 35 35.3% 93.3%;
+  --ui-primary: 170.6 76.9% 64.3%;
+  --ui-primary-foreground: 172.5 76.9% 10.2%;
+  --ui-secondary: 30 18% 15%;
+  --ui-secondary-foreground: 167.9 53.3% 67.3%;
+  --ui-muted: 30 18% 15%;
+  --ui-muted-foreground: 31.8 9.3% 64.1%;
+  --ui-accent: 169.1 47.8% 13.5%;
+  --ui-accent-foreground: 167.9 53.3% 67.3%;
+  --ui-destructive: 0 90.2% 75.9%;
+  --ui-destructive-foreground: 0 60% 10%;
+  --ui-border: 30 20% 22%;
+  --ui-input: 30 20% 22%;
+  --ui-ring: 170.6 76.9% 64.3%;
+  --ui-good: 140.3 67.7% 62.4%;
+  --ui-warn: 42.1 89.1% 63.9%;
 }
 
 /* ------------------------------------------------------------------
@@ -72,6 +125,12 @@
   --dur-1: 140ms; /* press feedback - must feel instant */
   --dur-2: 260ms; /* hover, colour, small state changes */
   --dur-3: 520ms; /* entrance */
+}
+
+.dark {
+  --bg: #16120e;
+  --ink: #f4efe8;
+  --brand: #5eead4;
 }
 
 html,
@@ -187,6 +246,23 @@ h2 {
     transform: none;
   }
 }
+
+/* Toasts arrive from slightly below, because they come from the bottom of the
+   screen. A shorter travel than `rise` - a toast is a notification, not a
+   page, and it should not draw the eye away from the work. */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.toast-in {
+  animation: toast-in var(--dur-2) var(--ease);
+}
 .rise > * {
   animation: rise var(--dur-3) var(--ease) backwards;
 }
@@ -224,4 +300,74 @@ h2 {
 :focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------
+   Print.
+
+   Bills are money, and money gets printed - pinned to a noticeboard, or
+   handed over with the cash. The screen treatment fights that: a dark
+   theme would burn a page of ink, sticky chrome would repeat on every
+   sheet, and shadows and entrance animations mean nothing on paper.
+
+   So print is forced back to light regardless of the chosen theme, the
+   navigation and any control is dropped, and the cards lose their
+   borders so the figures carry the page on their own.
+   ------------------------------------------------------------------ */
+@media print {
+  /* Forced light, whatever theme is on screen. */
+  :root,
+  .dark {
+    color-scheme: light;
+    --ui-background: 0 0% 100%;
+    --ui-card: 0 0% 100%;
+    --ui-foreground: 0 0% 0%;
+    --ui-muted-foreground: 0 0% 32%;
+    --ui-border: 0 0% 78%;
+    --ui-primary: 175.3 77.4% 22%;
+    --bg: #ffffff;
+    --ink: #000000;
+    --brand: #0f5f59;
+  }
+
+  body {
+    font-size: 11.5pt;
+    background: #fff;
+  }
+
+  /* Chrome, controls, and anything marked as screen-only. */
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  main {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Paper does not animate, and a shadow on white prints as grey smudge. */
+  .rise > * {
+    animation: none !important;
+  }
+  * {
+    box-shadow: none !important;
+  }
+
+  a {
+    color: #000;
+    text-decoration: none;
+  }
+
+  /* Keep a person's card whole rather than splitting an amount across sheets. */
+  .card,
+  [class*="rounded-xl"] {
+    break-inside: avoid;
+  }
+
+  @page {
+    margin: 14mm;
+  }
 }
