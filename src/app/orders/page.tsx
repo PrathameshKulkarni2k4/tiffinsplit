@@ -81,16 +81,23 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
           field, or searching would silently reset the month. */}
       <form method="get" className="mb-5">
         <input type="hidden" name="month" value={month} />
-        <label className="flex items-center gap-2 rounded-md border border-input bg-card px-3 shadow-card transition-colors focus-within:ring-2 focus-within:ring-ring sm:max-w-[320px]">
+        {/* A permanent visible label, not a placeholder. A placeholder
+            disappears the moment anyone types, which leaves the field
+            unlabelled exactly when it matters - and it fails contrast far more
+            often than a real label does. */}
+        <label htmlFor="orders-search" className="mb-1.5 block text-sm font-semibold">
+          Search
+        </label>
+        <div className="flex items-center gap-2 rounded-md border border-input bg-card px-3 shadow-card transition-colors focus-within:ring-2 focus-within:ring-ring sm:max-w-[320px]">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-          <span className="sr-only">Search this month&apos;s orders</span>
           <input
+            id="orders-search"
             name="q"
             defaultValue={q}
-            placeholder="Search a person or mess"
+            placeholder="A person or a mess"
             className="min-h-[44px] w-full flex-1 border-0 bg-transparent py-2 text-sm text-foreground focus-visible:outline-none sm:min-h-0"
           />
-        </label>
+        </div>
       </form>
 
       {filtered.length === 0 ? (

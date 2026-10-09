@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { planGroup, planTotal, type PlannedOrder, type TodayGroup } from "@/lib/split";
 import { money, todayISO } from "@/lib/format";
 import { Plus } from "lucide-react";
+import DateField from "@/components/DateField";
 
 import type { AppUser, Mess } from "@/lib/types";
 import SubmitButton from "@/components/SubmitButton";
@@ -177,15 +178,10 @@ export default function TodayForm({
     <form action={logToday}>
       <input type="hidden" name="payload" value={payload} />
 
-      <label className="mb-3.5 block font-semibold">
-        Date
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="mt-1.5 flex min-h-[46px] w-full rounded-md border border-input bg-card px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-      </label>
+      <div className="mb-3.5">
+        <span className="mb-1.5 block font-semibold">Date</span>
+        <DateField value={date} onChange={setDate} />
+      </div>
 
       {changed && (
         <Card className="mb-4 px-4 py-4">

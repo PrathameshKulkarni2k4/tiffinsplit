@@ -30,7 +30,7 @@ export default function NotFound() {
           <Link href="/">Back to the dashboard</Link>
         </Button>
         <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
-          <Link href="/today">Log today&apos;s lunch</Link>
+          <Link href="/today">Log a tiffin</Link>
         </Button>
       </div>
     </div>

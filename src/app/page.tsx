@@ -67,7 +67,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
         <div className="flex w-full flex-col items-stretch gap-2.5 sm:w-auto sm:flex-row sm:items-center">
           <MonthPicker month={month} />
           <Button asChild>
-            <Link href="/today">Log today&apos;s lunch</Link>
+            <Link href="/today">Log a tiffin</Link>
           </Button>
         </div>
       </div>

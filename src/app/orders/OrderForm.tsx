@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import DateField from "@/components/DateField";
 
 // The app is mobile-first, so fields keep a comfortable touch height on small
 // screens and relax to the tighter desktop sizing above the 721px breakpoint.
@@ -17,6 +18,9 @@ const SELECT =
 
 export default function OrderForm({ messes, members }: { messes: Mess[]; members: AppUser[] }) {
   const [messId, setMessId] = useState(messes[0]?.id ?? "");
+  const [orderDate, setOrderDate] = useState(
+    () => new Date().toISOString().slice(0, 10),
+  );
   const [type, setType] = useState<"full" | "half">("full");
   const [price, setPrice] = useState<string>(String(messes[0]?.full_price ?? ""));
   const [selected, setSelected] = useState<string[]>(members.map((m) => m.id));
@@ -37,16 +41,10 @@ export default function OrderForm({ messes, members }: { messes: Mess[]; members
   return (
     <Card className="px-5 py-[18px] max-md:px-4">
       <form action={createOrder} className="space-y-1">
-        <Label className="mb-3 block font-semibold">
-          Date
-          <Input
-            type="date"
-            name="order_date"
-            defaultValue={new Date().toISOString().slice(0, 10)}
-            required
-            className={FIELD}
-          />
-        </Label>
+        <div className="mb-3">
+          <span className="mb-1.5 block font-semibold">Date</span>
+          <DateField value={orderDate} onChange={setOrderDate} name="order_date" />
+        </div>
 
         <Label className="mb-3 block font-semibold">
           Mess

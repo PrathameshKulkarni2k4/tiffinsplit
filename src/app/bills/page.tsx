@@ -82,7 +82,7 @@ export default async function BillsPage({ searchParams }: { searchParams?: Searc
           body="Once someone logs a tiffin, everyone's share of it shows up here."
           action={
             <Button asChild>
-              <Link href="/today">Log today&apos;s lunch</Link>
+              <Link href="/today">Log a tiffin</Link>
             </Button>
           }
         />

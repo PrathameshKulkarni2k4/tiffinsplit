@@ -263,6 +263,22 @@ h2 {
 .toast-in {
   animation: toast-in var(--dur-2) var(--ease);
 }
+
+/* The picker sheet. Rises from the bottom edge it is anchored to, so the motion
+   matches where it came from. */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sheet-in {
+  animation: sheet-in var(--dur-2) var(--ease);
+}
 .rise > * {
   animation: rise var(--dur-3) var(--ease) backwards;
 }

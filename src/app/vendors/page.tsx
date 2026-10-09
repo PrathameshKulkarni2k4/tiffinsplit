@@ -53,7 +53,7 @@ export default async function VendorsPage({ searchParams }: { searchParams?: Sea
           body="This adds up what the group spent at each mess, as tiffins get logged."
           action={
             <Button asChild>
-              <Link href="/today">Log today&apos;s lunch</Link>
+              <Link href="/today">Log a tiffin</Link>
             </Button>
           }
         />
