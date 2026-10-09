@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMesses, getMembers } from "@/lib/data";
+import { groupsFromOrders, type LoggedOrder, type TodayGroup } from "@/lib/split";
 import TodayForm from "./TodayForm";
 import { Card } from "@/components/ui/card";
 
@@ -32,28 +33,40 @@ export default async function TodayPage() {
     loggedMessesByDate[d].push(m);
   }
 
-  // Who usually eats from each mess? Taken from that mess's most recent batch,
-  // so the form opens with the right people already ticked and only the absent
-  // one needs unticking. Derived, not stored - no schema change, and it follows
-  // the group as it drifts.
+  // Who usually eats from each mess, and how that day split - taken from that
+  // mess's most recent batch, so the form opens ready to confirm rather than
+  // needing the crowd re-picked and the half re-assigned every day.
+  //
+  // groupsFromOrders rebuilds the whole group, not just the people: it infers
+  // the split mode and works out who took the half alone. Carrying only the
+  // names across was the bug - it lost all-half, and lost whoever had the half.
   const { data: recent } = await supabase
     .from("orders")
-    .select("mess_id, batch_id, created_at, order_shares(user_id)")
+    .select("mess_id, batch_id, tiffin_type, created_at, order_shares(user_id)")
     .order("created_at", { ascending: false })
     .limit(300);
 
-  const usualByMess: Record<string, string[]> = {};
   const newestBatchForMess: Record<string, string> = {};
+  const ordersByMess: Record<string, LoggedOrder[]> = {};
   for (const o of recent ?? []) {
     const m = o.mess_id as string;
     const b = (o.batch_id as string | null) ?? "";
-    if (!(m in newestBatchForMess)) newestBatchForMess[m] = b;
-    if (newestBatchForMess[m] !== b) continue; // an older batch for this mess
-    if (!usualByMess[m]) usualByMess[m] = [];
-    for (const s of o.order_shares ?? []) {
-      const u = s.user_id as string;
-      if (!usualByMess[m].includes(u)) usualByMess[m].push(u);
+    if (!(m in newestBatchForMess)) {
+      newestBatchForMess[m] = b;
+      ordersByMess[m] = [];
     }
+    if (newestBatchForMess[m] !== b) continue; // an older batch for this mess
+    ordersByMess[m].push({
+      mess_id: m,
+      tiffin_type: o.tiffin_type as "full" | "half",
+      order_shares: (o.order_shares ?? []) as { user_id: string }[],
+    });
+  }
+
+  const usualByMess: Record<string, TodayGroup> = {};
+  for (const [m, orders] of Object.entries(ordersByMess)) {
+    const rebuilt = groupsFromOrders(orders)[0];
+    if (rebuilt) usualByMess[m] = rebuilt;
   }
 
   return (
