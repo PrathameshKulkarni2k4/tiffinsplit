@@ -49,7 +49,7 @@ export async function logToday(formData: FormData) {
       .limit(1);
     if (dupErr) throw new Error(dupErr.message);
     if (existing && existing.length > 0) {
-      throw new Error('There are already orders for that date and mess. Tick "Add anyway" to log them again.');
+      throw new Error('There are already orders for that date and mess. Tick "I know - add these anyway" to log them again.');
     }
   }
 

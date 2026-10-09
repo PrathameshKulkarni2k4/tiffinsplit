@@ -40,11 +40,11 @@ const SELECT =
 export default function TodayForm({
   messes,
   members,
-  todayMesses,
+  loggedMessesByDate,
 }: {
   messes: Mess[];
   members: AppUser[];
-  todayMesses: string[];
+  loggedMessesByDate: Record<string, string[]>;
 }) {
   const [date, setDate] = useState(todayISO());
   const [allowDuplicate, setAllowDuplicate] = useState(false);
@@ -115,10 +115,10 @@ export default function TodayForm({
     );
   });
 
-  const isToday = date === todayISO();
-  const clashing = isToday
-    ? groups.filter((g) => g.present.length > 0 && todayMesses.includes(g.messId))
-    : [];
+  const loggedMesses = loggedMessesByDate[date] ?? [];
+  const clashing = groups.filter(
+    (g) => g.present.length > 0 && loggedMesses.includes(g.messId)
+  );
   const hasClash = clashing.length > 0;
   const clashNames = clashing.map((g) => messOf[g.messId]?.name ?? "a mess").join(", ");
 
