@@ -92,3 +92,73 @@ export function planPerPerson(orders: PlannedOrder[]): Record<string, number> {
   }
   return out;
 }
+
+/** One mess group on the Today screen: who is eating from this mess, and how it splits. */
+export type TodayGroup = {
+  messId: string;
+  present: string[];
+  mode: SplitMode;
+  oddUser: string | null;
+};
+
+/** An order as stored, with just the sharers needed to rebuild a group. */
+export type LoggedOrder = {
+  mess_id: string;
+  tiffin_type: "full" | "half";
+  order_shares: { user_id: string }[];
+};
+
+/**
+ * The inverse of planGroup: rebuild Today groups from orders already logged, so
+ * the same order can be repeated in one tap.
+ *
+ * Orders are grouped by mess, because the app allows exactly one group per mess
+ * in a batch.
+ *
+ * The split mode is inferred rather than stored. all-half produces one half per
+ * person, each taken alone; pairs produces fulls shared by two, plus at most one
+ * half taken alone by the odd one out. So a batch of all-single-sharer halves is
+ * all-half, and anything else is pairs, with whoever holds a half alone as the
+ * odd user.
+ *
+ * One genuinely ambiguous case: a group of exactly one person in pairs mode also
+ * looks like all-half. It does not matter - either reading plans one half taken
+ * alone, for the same money.
+ */
+export function groupsFromOrders(orders: LoggedOrder[]): TodayGroup[] {
+  const byMess = new Map<string, LoggedOrder[]>();
+  for (const o of orders) {
+    const list = byMess.get(o.mess_id);
+    if (list) list.push(o);
+    else byMess.set(o.mess_id, [o]);
+  }
+
+  const groups: TodayGroup[] = [];
+
+  for (const [messId, list] of byMess) {
+    const present: string[] = [];
+    for (const o of list) {
+      for (const s of o.order_shares ?? []) {
+        if (!present.includes(s.user_id)) present.push(s.user_id);
+      }
+    }
+
+    const alone = (o: LoggedOrder) =>
+      o.tiffin_type === "half" && (o.order_shares ?? []).length === 1;
+
+    if (list.length > 0 && list.every(alone)) {
+      groups.push({ messId, present, mode: "all-half", oddUser: null });
+      continue;
+    }
+
+    const halfAlone = list.find(alone);
+    groups.push({
+      messId,
+      present,
+      mode: "pairs",
+      oddUser: halfAlone ? halfAlone.order_shares[0].user_id : null,
+    });
+  }
+
+  return groups;
+}

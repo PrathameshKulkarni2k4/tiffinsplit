@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getMesses, getMembers } from "@/lib/data";
+import { groupsFromOrders, type LoggedOrder, type TodayGroup } from "@/lib/split";
 import TodayForm from "./TodayForm";
 import { Card } from "@/components/ui/card";
 
@@ -32,10 +33,36 @@ export default async function TodayPage() {
     loggedMessesByDate[d].push(m);
   }
 
+  // The most recently logged batch, so the form can offer "same as last time".
+  // Two small queries rather than one clever one: find the newest batch id, then
+  // read that batch's orders with their sharers.
+  const { data: lastBatch } = await supabase
+    .from("orders")
+    .select("batch_id")
+    .not("batch_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const lastBatchId = (lastBatch?.[0]?.batch_id as string | undefined) ?? null;
+
+  let lastGroups: TodayGroup[] = [];
+  if (lastBatchId) {
+    const { data: lastOrders } = await supabase
+      .from("orders")
+      .select("mess_id, tiffin_type, order_shares(user_id)")
+      .eq("batch_id", lastBatchId)
+      .order("created_at", { ascending: true });
+    lastGroups = groupsFromOrders((lastOrders ?? []) as LoggedOrder[]);
+  }
+
   return (
     <>
       <h1>Today</h1>
-      <TodayForm messes={messes} members={members} loggedMessesByDate={loggedMessesByDate} />
+      <TodayForm
+        messes={messes}
+        members={members}
+        loggedMessesByDate={loggedMessesByDate}
+        lastGroups={lastGroups}
+      />
     </>
   );
 }
