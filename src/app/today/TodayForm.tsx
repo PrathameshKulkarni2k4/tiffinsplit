@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { planGroup, planTotal, type PlannedOrder, type SplitMode } from "@/lib/split";
+import { planGroup, planTotal, type PlannedOrder, type TodayGroup } from "@/lib/split";
 import { money, todayISO } from "@/lib/format";
 import type { AppUser, Mess } from "@/lib/types";
 import SubmitButton from "@/components/SubmitButton";
@@ -11,8 +11,6 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { logToday } from "./actions";
-
-type Group = { messId: string; present: string[]; mode: SplitMode; oddUser: string | null };
 
 function summaryLines(orders: PlannedOrder[]) {
   const lines: { label: string; amount: string }[] = [];
@@ -41,14 +39,16 @@ export default function TodayForm({
   messes,
   members,
   loggedMessesByDate,
+  lastGroups,
 }: {
   messes: Mess[];
   members: AppUser[];
   loggedMessesByDate: Record<string, string[]>;
+  lastGroups: TodayGroup[];
 }) {
   const [date, setDate] = useState(todayISO());
   const [allowDuplicate, setAllowDuplicate] = useState(false);
-  const [groups, setGroups] = useState<Group[]>([
+  const [groups, setGroups] = useState<TodayGroup[]>([
     {
       messId: messes[0]?.id ?? "",
       present: members.map((m) => m.id),
@@ -91,8 +91,23 @@ export default function TodayForm({
     });
   }
 
-  const patch = (gi: number, next: Partial<Group>) =>
+  const patch = (gi: number, next: Partial<TodayGroup>) =>
     setGroups((gs) => gs.map((g, i) => (i === gi ? { ...g, ...next } : g)));
+
+  // Re-use the last batch as a starting point. Most days are the same people at
+  // the same mess, so this turns a multi-step form into one tap plus a tweak.
+  function applyLast() {
+    setGroups(lastGroups.map((g) => ({ ...g, present: [...g.present] })));
+  }
+
+  const lastSummary = lastGroups
+    .map(
+      (g) =>
+        `${g.present.length} ${g.present.length === 1 ? "person" : "people"} · ${
+          messOf[g.messId]?.name ?? "a mess"
+        }`
+    )
+    .join(", ");
 
   function addGroup() {
     const used = new Set(groups.map((g) => g.messId));
@@ -140,6 +155,20 @@ export default function TodayForm({
           className="mt-1.5 flex min-h-[46px] w-full rounded-md border border-input bg-card px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </label>
+
+      {lastGroups.length > 0 && (
+        <Card className="mb-4 px-4 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="font-semibold">Same as last time</div>
+              <div className="text-sm text-muted-foreground">{lastSummary}</div>
+            </div>
+            <Button type="button" variant="outline" onClick={applyLast} className="h-11 md:h-9">
+              Fill it in
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {hasClash && (
         <Alert variant="warning" className="mb-4">

@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { planGroup, planTotal, planPerPerson } from "@/lib/split";
+import {
+  planGroup,
+  planTotal,
+  planPerPerson,
+  groupsFromOrders,
+  type PlannedOrder,
+  type LoggedOrder,
+  type SplitMode,
+} from "@/lib/split";
 
 const A = "aaa", B = "bbb", C = "ccc", D = "ddd", E = "eee";
 
@@ -82,5 +90,86 @@ describe("planGroup — edge cases", () => {
     expect(per[A]).toBe(50);
     expect(per[C]).toBe(70);
     expect(planTotal(plan.orders)).toBe(170);
+  });
+});
+
+/** Shape a plan the way the database would hand it back, for round-trip tests. */
+function loggedFromPlan(messId: string, orders: PlannedOrder[]): LoggedOrder[] {
+  return orders.map((o) => ({
+    mess_id: messId,
+    tiffin_type: o.tiffin_type,
+    order_shares: o.sharers.map((u) => ({ user_id: u })),
+  }));
+}
+
+describe("groupsFromOrders — rebuilding what was logged", () => {
+  it("pairs, 4 people -> one group, no odd user", () => {
+    const plan = planGroup([A, B, C, D], 90, 65, "pairs");
+    const groups = groupsFromOrders(loggedFromPlan("m1", plan.orders));
+    expect(groups).toHaveLength(1);
+    expect(groups[0].messId).toBe("m1");
+    expect(groups[0].mode).toBe("pairs");
+    expect(groups[0].oddUser).toBeNull();
+    expect([...groups[0].present].sort()).toEqual([A, B, C, D].sort());
+  });
+
+  it("pairs, odd group -> the half-taker comes back as the odd user", () => {
+    const plan = planGroup([A, B, C, D, E], 90, 65, "pairs", C);
+    const groups = groupsFromOrders(loggedFromPlan("m1", plan.orders));
+    expect(groups[0].mode).toBe("pairs");
+    expect(groups[0].oddUser).toBe(C);
+    expect([...groups[0].present].sort()).toEqual([A, B, C, D, E].sort());
+  });
+
+  it("all-half -> every tiffin is a half, no odd user", () => {
+    const plan = planGroup([A, B, C], 90, 65, "all-half");
+    const groups = groupsFromOrders(loggedFromPlan("m1", plan.orders));
+    expect(groups[0].mode).toBe("all-half");
+    expect(groups[0].oddUser).toBeNull();
+    expect([...groups[0].present].sort()).toEqual([A, B, C].sort());
+  });
+
+  it("two messes in one batch -> two groups, one per mess", () => {
+    const one = planGroup([A, B], 90, 65, "pairs");
+    const two = planGroup([C, D], 90, 65, "pairs");
+    const groups = groupsFromOrders([
+      ...loggedFromPlan("m1", one.orders),
+      ...loggedFromPlan("m2", two.orders),
+    ]);
+    expect(groups).toHaveLength(2);
+    expect(groups.map((g) => g.messId).sort()).toEqual(["m1", "m2"]);
+  });
+
+  it("nothing logged -> no groups", () => {
+    expect(groupsFromOrders([])).toEqual([]);
+  });
+
+  // The point of the feature: a rebuilt group must re-plan to exactly the same
+  // money, or "same as last time" would quietly change what people owe.
+  it("round-trip: rebuilding then re-planning gives identical money", () => {
+    const cases: { present: string[]; mode: SplitMode; oddUser: string | null }[] = [
+      { present: [A, B], mode: "pairs", oddUser: null },
+      { present: [A, B, C, D], mode: "pairs", oddUser: null },
+      { present: [A, B, C, D, E], mode: "pairs", oddUser: C },
+      { present: [A, B, C, D, E], mode: "pairs", oddUser: E },
+      { present: [A, B, C], mode: "all-half", oddUser: null },
+      { present: [A, B, C, D, E], mode: "all-half", oddUser: null },
+    ];
+
+    for (const c of cases) {
+      const plan = planGroup(c.present, 90, 65, c.mode, c.oddUser);
+      const rebuilt = groupsFromOrders(loggedFromPlan("m1", plan.orders));
+      expect(rebuilt).toHaveLength(1);
+
+      const again = planGroup(
+        rebuilt[0].present,
+        90,
+        65,
+        rebuilt[0].mode,
+        rebuilt[0].oddUser
+      );
+      expect(planPerPerson(again.orders)).toEqual(planPerPerson(plan.orders));
+      expect(planTotal(again.orders)).toBe(planTotal(plan.orders));
+    }
   });
 });
