@@ -5,8 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Store } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const FIELD = "min-h-[46px] text-base md:min-h-0";
+
+export const metadata = { title: "Messes" };
 
 export default async function MessesPage() {
   const messes = await getMesses(false);
@@ -64,11 +68,11 @@ export default async function MessesPage() {
 
       <h2>All messes</h2>
       {messes.length === 0 ? (
-        <Card className="px-5 py-[18px]">
-          <p className="m-0 text-sm text-muted-foreground">
-            No messes yet. Add your first one above.
-          </p>
-        </Card>
+        <EmptyState
+          icon={Store}
+          title="No messes yet"
+          body="Add the mess you eat from, with its full and half prices. Everything else in the app is built on this."
+        />
       ) : (
         messes.map((m) => (
           <Card key={m.id} className="mb-[18px] px-5 py-[18px]">

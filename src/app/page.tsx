@@ -27,13 +27,19 @@ type SearchParams = { month?: string };
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <Card className="px-[18px] py-4">
-      <div className="text-[0.82rem] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="text-[0.72rem] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
         {label}
       </div>
-      <div className="mt-1 text-2xl font-bold">{value}</div>
+      {/* The number is the point of the card, so it gets the display treatment:
+          mono, tight tracking, and enough size to read at arm's length. */}
+      <div className="fig mt-2 text-[1.75rem] font-semibold leading-none tracking-tight">
+        {value}
+      </div>
     </Card>
   );
 }
+
+export const metadata = { title: "Dashboard" };
 
 export default async function DashboardPage({ searchParams }: { searchParams?: SearchParams }) {
   const user = await getSessionUser();
@@ -61,7 +67,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
         <div className="flex w-full flex-col items-stretch gap-2.5 sm:w-auto sm:flex-row sm:items-center">
           <MonthPicker month={month} />
           <Button asChild>
-            <Link href="/today">Log today&apos;s lunch</Link>
+            <Link href="/today">Log a tiffin</Link>
           </Button>
         </div>
       </div>

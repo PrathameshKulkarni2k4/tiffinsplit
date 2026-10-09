@@ -1,14 +1,15 @@
 import Link from "next/link";
+import { ReceiptText, Search, SearchX } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { getMonthOrders, getMembers, nameMap, currentMonthLabel } from "@/lib/data";
-import { money, prettyDate } from "@/lib/format";
+import { money, prettyDate, prettyMonth } from "@/lib/format";
 import MonthPicker from "@/components/MonthPicker";
 import ConfirmButton from "@/components/ConfirmButton";
-import { deleteOrder, undoBatch } from "./actions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { deleteOrder } from "./actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -18,7 +19,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type SearchParams = { month?: string; logged?: string; batch?: string };
+// Names this page in the browser tab. The layout's template appends the app
+// name, so the tab reads "Orders · TiffinSplit".
+export const metadata = { title: "Orders" };
+
+type SearchParams = { month?: string; q?: string };
 
 const DELETE_CLASS =
   "border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive";
@@ -38,6 +43,24 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
 
   const canDelete = (createdBy: string) => createdBy === user?.id || isAdmin;
 
+  const q = typeof searchParams?.q === "string" ? searchParams.q.trim() : "";
+
+  // Filtered in memory. The month is already loaded and a group logs tens of
+  // orders a month, not thousands - a query would be more machinery for less
+  // speed. Matches a mess, a portion, or anyone who shares in the order.
+  const needle = q.toLowerCase();
+  const filtered = needle
+    ? orders.filter((o) =>
+        [
+          o.messes?.name,
+          o.tiffin_type,
+          ...(o.order_shares ?? []).map((s) => names[s.user_id]),
+        ]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(needle)),
+      )
+    : orders;
+
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -53,28 +76,49 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
         </div>
       </div>
 
-      {typeof searchParams?.logged === "string" && (
-        <Alert variant="success" className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <AlertDescription className="font-semibold">
-            Logged {searchParams.logged} tiffin{searchParams.logged === "1" ? "" : "s"} today.
-          </AlertDescription>
-          {typeof searchParams?.batch === "string" && (
-            <form action={undoBatch}>
-              <input type="hidden" name="batch" value={searchParams.batch} />
-              <Button variant="outline" size="sm" type="submit">
-                Undo
-              </Button>
-            </form>
-          )}
-        </Alert>
-      )}
+      {/* A plain GET form, so search works without JavaScript and the result is
+          a URL you can send to someone. The month rides along as a hidden
+          field, or searching would silently reset the month. */}
+      <form method="get" className="mb-5">
+        <input type="hidden" name="month" value={month} />
+        {/* A permanent visible label, not a placeholder. A placeholder
+            disappears the moment anyone types, which leaves the field
+            unlabelled exactly when it matters - and it fails contrast far more
+            often than a real label does. */}
+        <label htmlFor="orders-search" className="mb-1.5 block text-sm font-semibold">
+          Search
+        </label>
+        <div className="flex items-center gap-2 rounded-md border border-input bg-card px-3 shadow-card transition-colors focus-within:ring-2 focus-within:ring-ring sm:max-w-[320px]">
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <input
+            id="orders-search"
+            name="q"
+            defaultValue={q}
+            placeholder="A person or a mess"
+            className="min-h-[44px] w-full flex-1 border-0 bg-transparent py-2 text-sm text-foreground focus-visible:outline-none sm:min-h-0"
+          />
+        </div>
+      </form>
 
-      {orders.length === 0 ? (
-        <Card className="px-5 py-[18px]">
-          <p className="m-0 text-sm text-muted-foreground">
-            No orders this month. <Link href="/orders/new" className="underline">Log the first tiffin.</Link>
-          </p>
-        </Card>
+      {filtered.length === 0 ? (
+        q ? (
+          <EmptyState
+            icon={SearchX}
+            title={`Nothing matches “${q}”`}
+            body="Try a person's name, or the name of a mess."
+          />
+        ) : (
+          <EmptyState
+            icon={ReceiptText}
+            title={`Nothing logged for ${prettyMonth(month)}`}
+            body="Log a tiffin and everyone's share of it lands here."
+            action={
+              <Button asChild>
+                <Link href="/orders/new">Log a tiffin</Link>
+              </Button>
+            }
+          />
+        )
       ) : (
         <>
           {/* Desktop: table */}
@@ -92,7 +136,7 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((o) => (
+                {filtered.map((o) => (
                   <TableRow key={o.id}>
                     <TableCell>{prettyDate(o.order_date)}</TableCell>
                     <TableCell>{o.messes?.name ?? "—"}</TableCell>
@@ -133,12 +177,12 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
 
           {/* Mobile: cards */}
           <div className="md:hidden">
-            {orders.map((o) => (
+            {filtered.map((o) => (
               <Card key={o.id} className="mb-[18px] px-4 py-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-muted-foreground">{prettyDate(o.order_date)}</span>
                   <Portion type={o.tiffin_type} />
-                  <span className="font-semibold tabular-nums">{money(o.unit_price)}</span>
+                  <span className="fig font-semibold">{money(o.unit_price)}</span>
                 </div>
                 <div className="mt-1.5 font-semibold">{o.messes?.name ?? "—"}</div>
                 <div className="mt-0.5 text-sm text-muted-foreground">

@@ -32,7 +32,14 @@ export default function ConfirmButton({
     <Button
       {...props}
       type={armed ? "submit" : "button"}
-      className={cn(className, armed && "border-destructive bg-destructive/10 text-destructive")}
+      aria-live="polite"
+      className={cn(
+        className,
+        // Armed state has to be unmistakable. It was a tint before, which on a
+        // small button read as "hovered" rather than "will delete on the next
+        // tap" - and a stray tap on a phone is exactly what this guards.
+        armed && "border-destructive bg-destructive text-destructive-foreground ring-2 ring-destructive/30",
+      )}
       onClick={(e) => {
         if (armed) return; // second tap: let the submit through
         e.preventDefault();

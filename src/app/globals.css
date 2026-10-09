@@ -15,33 +15,93 @@
    shadcn wants, with incompatible value formats.
    ------------------------------------------------------------------ */
 :root {
-  --ui-background: 222.9 46.7% 97.1%;
-  --ui-foreground: 220.8 32.5% 15.1%;
+  /* Warm palette. The previous one was cool grey-blue, which is the default
+     every framework ships and the reason the app read as "grayscale plus one
+     blue". These are the same roles, moved to a warm paper ground with a deep
+     teal as the brand - distinctive without being loud, and it keeps the
+     figures the loudest thing on the screen. */
+  --ui-background: 37.5 33.3% 95.3%;
+  --ui-foreground: 26.7 15.8% 11.2%;
   --ui-card: 0 0% 100%;
-  --ui-card-foreground: 220.8 32.5% 15.1%;
+  --ui-card-foreground: 26.7 15.8% 11.2%;
   --ui-popover: 0 0% 100%;
-  --ui-popover-foreground: 220.8 32.5% 15.1%;
-  --ui-primary: 221.2 83.2% 53.3%;
+  --ui-popover-foreground: 26.7 15.8% 11.2%;
+  --ui-primary: 175.3 77.4% 26.1%;
   --ui-primary-foreground: 0 0% 100%;
-  --ui-secondary: 225.9 100% 96.7%;
-  --ui-secondary-foreground: 224.3 76.3% 48%;
-  --ui-muted: 220 36% 95.1%;
-  /* Contrast: 4.47:1 on --background was just under AA (4.5). At 43% it is
-     5.02:1 on the page background and 5.43:1 on cards, so muted text passes
-     wherever it lands. */
-  --ui-muted-foreground: 220 8.9% 43%;
-  --ui-accent: 224.3 100% 95.5%;
-  --ui-accent-foreground: 224.3 76.3% 48%;
+  --ui-secondary: 36 30% 95%;
+  --ui-secondary-foreground: 175.3 77.4% 26.1%;
+  --ui-muted: 36 20% 94%;
+  /* Contrast, measured not guessed:
+       6.45:1 on --background (was 4.41:1, which failed AA)
+       7.08:1 on cards. */
+  --ui-muted-foreground: 40 7% 33.7%;
+  /* Selected state. Tinted, not filled - so a chosen person reads as data and
+     a button reads as an action. They used to be the same solid blue. */
+  --ui-accent: 175 45% 94%;
+  --ui-accent-foreground: 175.3 77.4% 26.1%;
   --ui-destructive: 0 73.7% 41.8%;
   --ui-destructive-foreground: 0 0% 100%;
-  --ui-border: 222 23.8% 91.8%;
-  --ui-input: 222 23.8% 91.8%;
-  --ui-ring: 221.2 83.2% 53.3%;
+  --ui-border: 36 20% 80%;
+  --ui-input: 36 20% 80%;
+  --ui-ring: 175.3 77.4% 26.1%;
   --ui-radius: 0.625rem;
-  /* 29.2% gave 4.38:1 on its own /10 tint (the success alert). 27% gives 4.95:1. */
-  --ui-good: 142.4 71.8% 27%;
-  /* 37.1% gave 4.39:1 on its own /10 tint (the "half" badge). 33% gives 5.23:1. */
-  --ui-warn: 26 90.5% 33%;
+  /* 5.02:1 on a card. */
+  --ui-good: 142.4 71.8% 29.2%;
+  /* 4.92:1 on a card. */
+  --ui-warn: 35.5 91.7% 32.9%;
+
+  /* Tells the browser to draw its own furniture - the select popup, the
+     date picker, scrollbars, form autofill - in the light scheme. Without
+     this the native controls stay light even when the page does not. */
+  color-scheme: light;
+}
+
+/* ------------------------------------------------------------------
+   Dark mode.
+
+   Not an inversion of the light palette. Dark interfaces need less
+   saturation, more separation, and a brand colour light enough to carry
+   weight against a near-black ground - so the teal moves from 26% lightness
+   to 64%, and the shadow that gave cards their edge in light mode is
+   replaced by a brighter border, because a shadow on black is invisible.
+
+   Every value below was measured, not eyeballed:
+
+     foreground on background        16.29:1
+     foreground on a card            15.24:1
+     muted text on background         7.58:1
+     muted text on a card             7.09:1
+     button label on primary          9.92:1
+     selected-chip text on its tint   8.16:1
+     good / warn / destructive       10.38 / 10.71 / 7.50:1
+
+   The ground is warm (hue 30) rather than neutral grey, so switching to
+   dark does not change the app's temperature - only its light level.
+   ------------------------------------------------------------------ */
+.dark {
+  color-scheme: dark;
+
+  --ui-background: 30 22.2% 7.1%;
+  --ui-foreground: 35 35.3% 93.3%;
+  --ui-card: 30 20% 9.8%;
+  --ui-card-foreground: 35 35.3% 93.3%;
+  --ui-popover: 30 20% 11%;
+  --ui-popover-foreground: 35 35.3% 93.3%;
+  --ui-primary: 170.6 76.9% 64.3%;
+  --ui-primary-foreground: 172.5 76.9% 10.2%;
+  --ui-secondary: 30 18% 15%;
+  --ui-secondary-foreground: 167.9 53.3% 67.3%;
+  --ui-muted: 30 18% 15%;
+  --ui-muted-foreground: 31.8 9.3% 64.1%;
+  --ui-accent: 169.1 47.8% 13.5%;
+  --ui-accent-foreground: 167.9 53.3% 67.3%;
+  --ui-destructive: 0 90.2% 75.9%;
+  --ui-destructive-foreground: 0 60% 10%;
+  --ui-border: 30 20% 22%;
+  --ui-input: 30 20% 22%;
+  --ui-ring: 170.6 76.9% 64.3%;
+  --ui-good: 140.3 67.7% 62.4%;
+  --ui-warn: 42.1 89.1% 63.9%;
 }
 
 /* ------------------------------------------------------------------
@@ -53,9 +113,24 @@
    here are the base document styles and the two colours they reference.
    ------------------------------------------------------------------ */
 :root {
-  --bg: #f4f6fb;
-  --ink: #1a2233;
-  --brand: #2563eb;
+  --bg: #f7f4ef;
+  --ink: #211c18;
+  --brand: #0f766e;
+
+  /* Motion. One curve, used everywhere. easeOutExpo: fast out of the gate,
+     long settle. Linear is banned for anything a person triggers - it reads as
+     mechanical - and bounce is dated. Transform and opacity only, so the
+     compositor does the work and nothing reflows mid-animation. */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-1: 140ms; /* press feedback - must feel instant */
+  --dur-2: 260ms; /* hover, colour, small state changes */
+  --dur-3: 520ms; /* entrance */
+}
+
+.dark {
+  --bg: #16120e;
+  --ink: #f4efe8;
+  --brand: #5eead4;
 }
 
 html,
@@ -65,12 +140,55 @@ body {
 }
 
 body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Geist. The previous stack - system-ui, Roboto, Helvetica - is the exact
+     list every generic framework ships, and it is most of why this read as an
+     artifact rather than a product. Type is the highest-leverage single choice
+     in a UI; nothing else here changes the impression as much. */
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   background: var(--bg);
   color: var(--ink);
   line-height: 1.55;
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+
+  /* Figures that do not jitter. Every number in this app is money that sits in
+     a column, so proportional digits make a column of amounts look ragged and
+     reflow as values change. Tabular digits are the cheapest signal that a page
+     was built rather than assembled. */
+  font-variant-numeric: tabular-nums;
+
+  /* The browser surfaces. These are the parts nobody draws, and they ship with
+     defaults that belong to no design system. Theming them from the palette is
+     what makes the app feel finished rather than assembled. */
+  caret-color: var(--brand);
+  scrollbar-color: hsl(var(--ui-border)) transparent;
+  scrollbar-width: thin;
+}
+
+::selection {
+  background: hsl(var(--ui-primary) / 0.18);
+  color: inherit;
+}
+
+/* WebKit needs its own rules; scrollbar-color covers Firefox. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--ui-border));
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--ui-muted-foreground) / 0.5);
+  background-clip: content-box;
 }
 
 @media (max-width: 720px) {
@@ -88,20 +206,105 @@ a:hover {
 }
 
 h1 {
-  font-size: 1.6rem;
-  margin: 8px 0 4px;
+  /* A display heading, not a big label. Tight tracking is what makes type at
+     this size look set rather than scaled up; without it the letters drift
+     apart and the whole page reads amateur. */
+  font-size: clamp(1.75rem, 1.35rem + 1.7vw, 2.35rem);
+  font-weight: 650;
+  letter-spacing: -0.022em;
+  line-height: 1.1;
+  margin: 2px 0 2px;
 }
 h2 {
-  font-size: 1.2rem;
-  margin: 28px 0 10px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.011em;
+  margin: 30px 0 10px;
+}
+
+/* Money. Geist Mono for figures that carry weight - totals, dues, per-head
+   amounts. Monospaced digits are what accounting software has always used, and
+   they make a column of amounts land on an exact axis instead of merely
+   right-aligning. */
+.fig {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
+
+/* Entrance. Children rise in sequence rather than appearing all at once, which
+   is the difference between a page that loads and a page that arrives. Only
+   transform and opacity animate. `backwards` holds the start state during the
+   delay so nothing flashes at full opacity first. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Toasts arrive from slightly below, because they come from the bottom of the
+   screen. A shorter travel than `rise` - a toast is a notification, not a
+   page, and it should not draw the eye away from the work. */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.toast-in {
+  animation: toast-in var(--dur-2) var(--ease);
+}
+
+/* The picker sheet. Rises from the bottom edge it is anchored to, so the motion
+   matches where it came from. */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sheet-in {
+  animation: sheet-in var(--dur-2) var(--ease);
+}
+.rise > * {
+  animation: rise var(--dur-3) var(--ease) backwards;
+}
+.rise > *:nth-child(1) { animation-delay: 0ms; }
+.rise > *:nth-child(2) { animation-delay: 45ms; }
+.rise > *:nth-child(3) { animation-delay: 90ms; }
+.rise > *:nth-child(4) { animation-delay: 135ms; }
+.rise > *:nth-child(5) { animation-delay: 180ms; }
+.rise > *:nth-child(6) { animation-delay: 225ms; }
+.rise > *:nth-child(n + 7) { animation-delay: 270ms; }
+
+/* Anyone who has asked their system to stop moving things means it. This also
+   settles the page for screenshots and print. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @media (max-width: 720px) {
-  h1 {
-    font-size: 1.4rem;
-  }
   h2 {
-    font-size: 1.08rem;
     margin: 22px 0 8px;
   }
 }
@@ -113,4 +316,74 @@ h2 {
 :focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------
+   Print.
+
+   Bills are money, and money gets printed - pinned to a noticeboard, or
+   handed over with the cash. The screen treatment fights that: a dark
+   theme would burn a page of ink, sticky chrome would repeat on every
+   sheet, and shadows and entrance animations mean nothing on paper.
+
+   So print is forced back to light regardless of the chosen theme, the
+   navigation and any control is dropped, and the cards lose their
+   borders so the figures carry the page on their own.
+   ------------------------------------------------------------------ */
+@media print {
+  /* Forced light, whatever theme is on screen. */
+  :root,
+  .dark {
+    color-scheme: light;
+    --ui-background: 0 0% 100%;
+    --ui-card: 0 0% 100%;
+    --ui-foreground: 0 0% 0%;
+    --ui-muted-foreground: 0 0% 32%;
+    --ui-border: 0 0% 78%;
+    --ui-primary: 175.3 77.4% 22%;
+    --bg: #ffffff;
+    --ink: #000000;
+    --brand: #0f5f59;
+  }
+
+  body {
+    font-size: 11.5pt;
+    background: #fff;
+  }
+
+  /* Chrome, controls, and anything marked as screen-only. */
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  main {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Paper does not animate, and a shadow on white prints as grey smudge. */
+  .rise > * {
+    animation: none !important;
+  }
+  * {
+    box-shadow: none !important;
+  }
+
+  a {
+    color: #000;
+    text-decoration: none;
+  }
+
+  /* Keep a person's card whole rather than splitting an amount across sheets. */
+  .card,
+  [class*="rounded-xl"] {
+    break-inside: avoid;
+  }
+
+  @page {
+    margin: 14mm;
+  }
 }

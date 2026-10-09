@@ -5,6 +5,8 @@ import { groupsFromOrders, keepOwnPeople, lastMessByUser, type LoggedOrder, type
 import TodayForm from "./TodayForm";
 import { Card } from "@/components/ui/card";
 
+export const metadata = { title: "Today" };
+
 export default async function TodayPage() {
   const [messes, members] = await Promise.all([getMesses(true), getMembers()]);
 
