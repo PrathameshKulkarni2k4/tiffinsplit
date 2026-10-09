@@ -54,6 +54,30 @@ export default async function TodayPage() {
     lastGroups = groupsFromOrders((lastOrders ?? []) as LoggedOrder[]);
   }
 
+  // Who usually eats from each mess? Taken from that mess's most recent batch,
+  // so the form opens with the right people already ticked and only the absent
+  // one needs unticking. Derived, not stored - no schema change, and it follows
+  // the group as it drifts.
+  const { data: recent } = await supabase
+    .from("orders")
+    .select("mess_id, batch_id, created_at, order_shares(user_id)")
+    .order("created_at", { ascending: false })
+    .limit(300);
+
+  const usualByMess: Record<string, string[]> = {};
+  const newestBatchForMess: Record<string, string> = {};
+  for (const o of recent ?? []) {
+    const m = o.mess_id as string;
+    const b = (o.batch_id as string | null) ?? "";
+    if (!(m in newestBatchForMess)) newestBatchForMess[m] = b;
+    if (newestBatchForMess[m] !== b) continue; // an older batch for this mess
+    if (!usualByMess[m]) usualByMess[m] = [];
+    for (const s of o.order_shares ?? []) {
+      const u = s.user_id as string;
+      if (!usualByMess[m].includes(u)) usualByMess[m].push(u);
+    }
+  }
+
   return (
     <>
       <h1>Today</h1>
@@ -62,6 +86,7 @@ export default async function TodayPage() {
         members={members}
         loggedMessesByDate={loggedMessesByDate}
         lastGroups={lastGroups}
+        usualByMess={usualByMess}
       />
     </>
   );

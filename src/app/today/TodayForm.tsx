@@ -40,18 +40,25 @@ export default function TodayForm({
   members,
   loggedMessesByDate,
   lastGroups,
+  usualByMess,
 }: {
   messes: Mess[];
   members: AppUser[];
   loggedMessesByDate: Record<string, string[]>;
   lastGroups: TodayGroup[];
+  usualByMess: Record<string, string[]>;
 }) {
+  // The crowd for a mess: whoever ate from it last time, or everyone if this
+  // mess has no history yet. Falls back rather than showing an empty group.
+  const usualFor = (messId: string) =>
+    usualByMess[messId]?.length ? [...usualByMess[messId]] : members.map((m) => m.id);
+
   const [date, setDate] = useState(todayISO());
   const [allowDuplicate, setAllowDuplicate] = useState(false);
   const [groups, setGroups] = useState<TodayGroup[]>([
     {
       messId: messes[0]?.id ?? "",
-      present: members.map((m) => m.id),
+      present: usualFor(messes[0]?.id ?? ""),
       mode: "pairs",
       oddUser: null,
     },
@@ -112,7 +119,10 @@ export default function TodayForm({
   function addGroup() {
     const used = new Set(groups.map((g) => g.messId));
     const next = messes.find((m) => !used.has(m.id)) ?? messes[0];
-    setGroups((gs) => [...gs, { messId: next.id, present: [], mode: "pairs", oddUser: null }]);
+    setGroups((gs) => [
+      ...gs,
+      { messId: next.id, present: usualFor(next.id), mode: "pairs", oddUser: null },
+    ]);
   }
 
   function removeGroup(gi: number) {
