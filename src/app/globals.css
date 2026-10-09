@@ -15,33 +15,40 @@
    shadcn wants, with incompatible value formats.
    ------------------------------------------------------------------ */
 :root {
-  --ui-background: 222.9 46.7% 97.1%;
-  --ui-foreground: 220.8 32.5% 15.1%;
+  /* Warm palette. The previous one was cool grey-blue, which is the default
+     every framework ships and the reason the app read as "grayscale plus one
+     blue". These are the same roles, moved to a warm paper ground with a deep
+     teal as the brand - distinctive without being loud, and it keeps the
+     figures the loudest thing on the screen. */
+  --ui-background: 37.5 33.3% 95.3%;
+  --ui-foreground: 26.7 15.8% 11.2%;
   --ui-card: 0 0% 100%;
-  --ui-card-foreground: 220.8 32.5% 15.1%;
+  --ui-card-foreground: 26.7 15.8% 11.2%;
   --ui-popover: 0 0% 100%;
-  --ui-popover-foreground: 220.8 32.5% 15.1%;
-  --ui-primary: 221.2 83.2% 53.3%;
+  --ui-popover-foreground: 26.7 15.8% 11.2%;
+  --ui-primary: 175.3 77.4% 26.1%;
   --ui-primary-foreground: 0 0% 100%;
-  --ui-secondary: 225.9 100% 96.7%;
-  --ui-secondary-foreground: 224.3 76.3% 48%;
-  --ui-muted: 220 36% 95.1%;
-  /* Contrast: 4.47:1 on --background was just under AA (4.5). At 43% it is
-     5.02:1 on the page background and 5.43:1 on cards, so muted text passes
-     wherever it lands. */
-  --ui-muted-foreground: 220 8.9% 43%;
-  --ui-accent: 224.3 100% 95.5%;
-  --ui-accent-foreground: 224.3 76.3% 48%;
+  --ui-secondary: 36 30% 95%;
+  --ui-secondary-foreground: 175.3 77.4% 26.1%;
+  --ui-muted: 36 20% 94%;
+  /* Contrast, measured not guessed:
+       6.45:1 on --background (was 4.41:1, which failed AA)
+       7.08:1 on cards. */
+  --ui-muted-foreground: 40 7% 33.7%;
+  /* Selected state. Tinted, not filled - so a chosen person reads as data and
+     a button reads as an action. They used to be the same solid blue. */
+  --ui-accent: 175 45% 94%;
+  --ui-accent-foreground: 175.3 77.4% 26.1%;
   --ui-destructive: 0 73.7% 41.8%;
   --ui-destructive-foreground: 0 0% 100%;
-  --ui-border: 222 23.8% 91.8%;
-  --ui-input: 222 23.8% 91.8%;
-  --ui-ring: 221.2 83.2% 53.3%;
+  --ui-border: 36 20% 80%;
+  --ui-input: 36 20% 80%;
+  --ui-ring: 175.3 77.4% 26.1%;
   --ui-radius: 0.625rem;
-  /* 29.2% gave 4.38:1 on its own /10 tint (the success alert). 27% gives 4.95:1. */
-  --ui-good: 142.4 71.8% 27%;
-  /* 37.1% gave 4.39:1 on its own /10 tint (the "half" badge). 33% gives 5.23:1. */
-  --ui-warn: 26 90.5% 33%;
+  /* 5.02:1 on a card. */
+  --ui-good: 142.4 71.8% 29.2%;
+  /* 4.92:1 on a card. */
+  --ui-warn: 35.5 91.7% 32.9%;
 }
 
 /* ------------------------------------------------------------------
@@ -53,9 +60,9 @@
    here are the base document styles and the two colours they reference.
    ------------------------------------------------------------------ */
 :root {
-  --bg: #f4f6fb;
-  --ink: #1a2233;
-  --brand: #2563eb;
+  --bg: #f7f4ef;
+  --ink: #211c18;
+  --brand: #0f766e;
 }
 
 html,
@@ -71,6 +78,43 @@ body {
   line-height: 1.55;
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
+
+  /* Figures that do not jitter. Every number in this app is money that sits in
+     a column, so proportional digits make a column of amounts look ragged and
+     reflow as values change. Tabular digits are the cheapest signal that a page
+     was built rather than assembled. */
+  font-variant-numeric: tabular-nums;
+
+  /* The browser surfaces. These are the parts nobody draws, and they ship with
+     defaults that belong to no design system. Theming them from the palette is
+     what makes the app feel finished rather than assembled. */
+  caret-color: var(--brand);
+  scrollbar-color: hsl(var(--ui-border)) transparent;
+  scrollbar-width: thin;
+}
+
+::selection {
+  background: hsl(var(--ui-primary) / 0.18);
+  color: inherit;
+}
+
+/* WebKit needs its own rules; scrollbar-color covers Firefox. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--ui-border));
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--ui-muted-foreground) / 0.5);
+  background-clip: content-box;
 }
 
 @media (max-width: 720px) {

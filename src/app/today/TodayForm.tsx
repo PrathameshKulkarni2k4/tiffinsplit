@@ -254,7 +254,7 @@ export default function TodayForm({
                     className={cn(
                       "min-h-[44px] rounded-full border px-3.5 py-2.5 text-[0.9rem] font-semibold transition-colors",
                       on
-                        ? "border-primary bg-primary text-primary-foreground"
+                        ? "border-primary bg-accent text-accent-foreground"
                         : "border-border bg-card text-muted-foreground hover:border-input",
                     )}
                     onClick={() => toggle(gi, m.id)}
@@ -338,7 +338,7 @@ export default function TodayForm({
                         className={cn(
                           "min-h-[44px] rounded-full border px-3.5 py-2.5 text-[0.9rem] font-semibold transition-colors",
                           on
-                            ? "border-primary bg-primary text-primary-foreground"
+                            ? "border-primary bg-accent text-accent-foreground"
                             : "border-border bg-card text-muted-foreground hover:border-input",
                         )}
                         onClick={() => patch(gi, { oddUser: uid })}
