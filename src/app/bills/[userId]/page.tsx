@@ -54,7 +54,7 @@ export default async function PersonBillPage({
 
       <Card className="mb-[18px] flex flex-wrap items-center justify-between gap-3 px-5 py-[18px]">
         <strong>Total this month</strong>
-        <span className="font-semibold tabular-nums">{money(total)}</span>
+        <span className="fig font-semibold">{money(total)}</span>
       </Card>
 
       {rows.length === 0 ? (
@@ -123,7 +123,7 @@ export default async function PersonBillPage({
                     <Badge variant={portionVariant(order.tiffin_type)}>
                       {order.tiffin_type}
                     </Badge>
-                    <span className="font-semibold tabular-nums">{money(amount)}</span>
+                    <span className="fig font-semibold">{money(amount)}</span>
                   </div>
                   <div className="mt-1.5 font-semibold">{order.messes?.name ?? "—"}</div>
                   <div className="mt-0.5 text-sm text-muted-foreground">

@@ -306,12 +306,12 @@ export default function TodayForm({
                     {summaryLines(plan.orders).map((l, i) => (
                       <div key={i} className="flex justify-between py-[3px]">
                         <span>{l.label}</span>
-                        <span className="font-semibold tabular-nums">{l.amount}</span>
+                        <span className="fig font-semibold">{l.amount}</span>
                       </div>
                     ))}
                     <div className="flex justify-between py-[3px] pt-1.5">
                       <span className="text-sm text-muted-foreground">Group total</span>
-                      <span className="font-semibold tabular-nums">
+                      <span className="fig font-semibold">
                         {money(planTotal(plan.orders))}
                       </span>
                     </div>
@@ -378,7 +378,7 @@ export default function TodayForm({
 
       <div className="flex items-baseline justify-between px-1 pb-1.5 pt-3.5 text-[1.05rem] font-bold">
         <span>Total today</span>
-        <span className="font-semibold tabular-nums">{money(grand)}</span>
+        <span className="fig font-semibold">{money(grand)}</span>
       </div>
 
       <SubmitButton pendingLabel="Saving…" disabled={!canConfirm}>

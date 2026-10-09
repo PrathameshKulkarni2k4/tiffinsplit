@@ -63,6 +63,15 @@
   --bg: #f7f4ef;
   --ink: #211c18;
   --brand: #0f766e;
+
+  /* Motion. One curve, used everywhere. easeOutExpo: fast out of the gate,
+     long settle. Linear is banned for anything a person triggers - it reads as
+     mechanical - and bounce is dated. Transform and opacity only, so the
+     compositor does the work and nothing reflows mid-animation. */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-1: 140ms; /* press feedback - must feel instant */
+  --dur-2: 260ms; /* hover, colour, small state changes */
+  --dur-3: 520ms; /* entrance */
 }
 
 html,
@@ -72,12 +81,18 @@ body {
 }
 
 body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Geist. The previous stack - system-ui, Roboto, Helvetica - is the exact
+     list every generic framework ships, and it is most of why this read as an
+     artifact rather than a product. Type is the highest-leverage single choice
+     in a UI; nothing else here changes the impression as much. */
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   background: var(--bg);
   color: var(--ink);
   line-height: 1.55;
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 
   /* Figures that do not jitter. Every number in this app is money that sits in
      a column, so proportional digits make a column of amounts look ragged and
@@ -132,20 +147,72 @@ a:hover {
 }
 
 h1 {
-  font-size: 1.6rem;
-  margin: 8px 0 4px;
+  /* A display heading, not a big label. Tight tracking is what makes type at
+     this size look set rather than scaled up; without it the letters drift
+     apart and the whole page reads amateur. */
+  font-size: clamp(1.75rem, 1.35rem + 1.7vw, 2.35rem);
+  font-weight: 650;
+  letter-spacing: -0.022em;
+  line-height: 1.1;
+  margin: 2px 0 2px;
 }
 h2 {
-  font-size: 1.2rem;
-  margin: 28px 0 10px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.011em;
+  margin: 30px 0 10px;
+}
+
+/* Money. Geist Mono for figures that carry weight - totals, dues, per-head
+   amounts. Monospaced digits are what accounting software has always used, and
+   they make a column of amounts land on an exact axis instead of merely
+   right-aligning. */
+.fig {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
+
+/* Entrance. Children rise in sequence rather than appearing all at once, which
+   is the difference between a page that loads and a page that arrives. Only
+   transform and opacity animate. `backwards` holds the start state during the
+   delay so nothing flashes at full opacity first. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise > * {
+  animation: rise var(--dur-3) var(--ease) backwards;
+}
+.rise > *:nth-child(1) { animation-delay: 0ms; }
+.rise > *:nth-child(2) { animation-delay: 45ms; }
+.rise > *:nth-child(3) { animation-delay: 90ms; }
+.rise > *:nth-child(4) { animation-delay: 135ms; }
+.rise > *:nth-child(5) { animation-delay: 180ms; }
+.rise > *:nth-child(6) { animation-delay: 225ms; }
+.rise > *:nth-child(n + 7) { animation-delay: 270ms; }
+
+/* Anyone who has asked their system to stop moving things means it. This also
+   settles the page for screenshots and print. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @media (max-width: 720px) {
-  h1 {
-    font-size: 1.4rem;
-  }
   h2 {
-    font-size: 1.08rem;
     margin: 22px 0 8px;
   }
 }

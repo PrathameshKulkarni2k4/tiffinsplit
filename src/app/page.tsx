@@ -27,10 +27,14 @@ type SearchParams = { month?: string };
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <Card className="px-[18px] py-4">
-      <div className="text-[0.82rem] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="text-[0.72rem] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
         {label}
       </div>
-      <div className="mt-1 text-2xl font-bold">{value}</div>
+      {/* The number is the point of the card, so it gets the display treatment:
+          mono, tight tracking, and enough size to read at arm's length. */}
+      <div className="fig mt-2 text-[1.75rem] font-semibold leading-none tracking-tight">
+        {value}
+      </div>
     </Card>
   );
 }

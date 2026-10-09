@@ -138,7 +138,7 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-muted-foreground">{prettyDate(o.order_date)}</span>
                   <Portion type={o.tiffin_type} />
-                  <span className="font-semibold tabular-nums">{money(o.unit_price)}</span>
+                  <span className="fig font-semibold">{money(o.unit_price)}</span>
                 </div>
                 <div className="mt-1.5 font-semibold">{o.messes?.name ?? "—"}</div>
                 <div className="mt-0.5 text-sm text-muted-foreground">
