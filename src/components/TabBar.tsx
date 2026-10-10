@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ArrowLeftRight,
   CalendarPlus,
   FileText,
   IndianRupee,
@@ -17,6 +18,7 @@ const TABS: { href: string; label: string; Icon: LucideIcon }[] = [
   { href: "/today", label: "Today", Icon: CalendarPlus },
   { href: "/orders", label: "Orders", Icon: List },
   { href: "/bills", label: "Bills", Icon: FileText },
+  { href: "/settlements", label: "Settle", Icon: ArrowLeftRight },
   { href: "/vendors", label: "Owed", Icon: IndianRupee },
   { href: "/messes", label: "Messes", Icon: Store },
 ];
