@@ -71,6 +71,43 @@ body {
   line-height: 1.55;
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
+
+  /* Figures that do not jitter. Every number in this app is money that sits in
+     a column, so proportional digits make a column of amounts look ragged and
+     reflow as values change. Tabular digits are the cheapest signal that a page
+     was built rather than assembled. */
+  font-variant-numeric: tabular-nums;
+
+  /* The browser surfaces. These are the parts nobody draws, and they ship with
+     defaults that belong to no design system. Theming them from the palette is
+     what makes the app feel finished rather than assembled. */
+  caret-color: var(--brand);
+  scrollbar-color: hsl(var(--ui-border)) transparent;
+  scrollbar-width: thin;
+}
+
+::selection {
+  background: hsl(var(--ui-primary) / 0.18);
+  color: inherit;
+}
+
+/* WebKit needs its own rules; scrollbar-color covers Firefox. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--ui-border));
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--ui-muted-foreground) / 0.5);
+  background-clip: content-box;
 }
 
 @media (max-width: 720px) {
