@@ -1,8 +1,12 @@
+import Link from "next/link";
+import { ReceiptText } from "lucide-react";
 import { getMonthOrders, getMesses, currentMonthLabel } from "@/lib/data";
 import { perMess, grandTotal } from "@/lib/aggregate";
-import { money } from "@/lib/format";
+import { money, prettyMonth } from "@/lib/format";
 import MonthPicker from "@/components/MonthPicker";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -14,6 +18,8 @@ import {
 } from "@/components/ui/table";
 
 type SearchParams = { month?: string };
+
+export const metadata = { title: "Messes owed" };
 
 export default async function VendorsPage({ searchParams }: { searchParams?: SearchParams }) {
   const month = typeof searchParams?.month === "string" ? searchParams.month : currentMonthLabel();
@@ -41,9 +47,16 @@ export default async function VendorsPage({ searchParams }: { searchParams?: Sea
       </div>
 
       {rows.length === 0 ? (
-        <Card className="px-5 py-[18px]">
-          <p className="m-0 text-sm text-muted-foreground">No orders this month yet.</p>
-        </Card>
+        <EmptyState
+          icon={ReceiptText}
+          title={`Nothing owed for ${prettyMonth(month)}`}
+          body="This adds up what the group spent at each mess, as tiffins get logged."
+          action={
+            <Button asChild>
+              <Link href="/today">Log a tiffin</Link>
+            </Button>
+          }
+        />
       ) : (
         <Card className="overflow-hidden">
           <Table>

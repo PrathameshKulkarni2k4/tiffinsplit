@@ -6,6 +6,7 @@ import { setActive, setRole } from "./actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import Avatar from "@/components/Avatar";
 import {
   Table,
   TableBody,
@@ -14,6 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+export const metadata = { title: "Members" };
 
 export default async function MembersPage() {
   const profile = await getProfile();
@@ -55,7 +58,12 @@ export default async function MembersPage() {
               <TableBody>
                 {pending.map((u) => (
                   <TableRow key={u.id}>
-                    <TableCell>{u.full_name ?? "—"}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center gap-2.5">
+                        <Avatar name={u.full_name ?? "?"} size="sm" />
+                        {u.full_name ?? "—"}
+                      </span>
+                    </TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {prettyDate(u.created_at.slice(0, 10))}
@@ -80,7 +88,10 @@ export default async function MembersPage() {
             {pending.map((u) => (
               <Card key={u.id} className="mb-[18px] px-4 py-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span className="font-semibold">{u.full_name ?? "—"}</span>
+                  <span className="inline-flex items-center gap-2.5 font-semibold">
+                    <Avatar name={u.full_name ?? "?"} size="sm" />
+                    {u.full_name ?? "—"}
+                  </span>
                   <Badge variant="warn">pending</Badge>
                 </div>
                 <div className="mt-1 break-all text-sm text-muted-foreground">{u.email}</div>
@@ -120,8 +131,13 @@ export default async function MembersPage() {
               return (
                 <TableRow key={u.id}>
                   <TableCell>
-                    {u.full_name ?? "—"}
-                    {isMe ? " (you)" : ""}
+                    <span className="inline-flex items-center gap-2.5">
+                      <Avatar name={u.full_name ?? "?"} size="sm" />
+                      <span>
+                        {u.full_name ?? "—"}
+                        {isMe ? " (you)" : ""}
+                      </span>
+                    </span>
                   </TableCell>
                   <TableCell>{u.email}</TableCell>
                   <TableCell>

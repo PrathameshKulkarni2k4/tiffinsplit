@@ -67,6 +67,24 @@ const config: Config = {
         md: "calc(var(--ui-radius) - 2px)",
         sm: "calc(var(--ui-radius) - 4px)",
       },
+      fontFamily: {
+        // Geist, self-hosted. `font-sans` and `font-mono` now resolve to it
+        // rather than to whatever the browser defaults to.
+        sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
+      },
+      // The single motion curve, as a utility so components can say
+      // `ease-ease` instead of hard-coding a cubic-bezier in a class string.
+      transitionTimingFunction: {
+        ease: "cubic-bezier(0.16, 1, 0.3, 1)",
+      },
+      boxShadow: {
+        // Offset plus blur, tinted warm so it belongs to this palette rather
+        // than to grey. Two layers: a tight contact shadow and a soft ambient
+        // one. A single hard shadow is the tell of a default component.
+        card: "0 1px 2px rgba(33, 28, 24, 0.05), 0 1px 3px rgba(33, 28, 24, 0.05)",
+        lift: "0 2px 4px rgba(33, 28, 24, 0.06), 0 8px 20px -6px rgba(33, 28, 24, 0.12)",
+      },
     },
   },
   plugins: [],
