@@ -1,0 +1,40 @@
+# Keep dependencies current, quietly.
+#
+# Two things matter for this repo specifically:
+#
+#   1. Group minor and patch bumps into a single PR per week. Without grouping,
+#      Dependabot opens one PR per package, and a dashboard with fifteen open
+#      PRs is a dashboard nobody reads. Security updates still arrive on their
+#      own, immediately, which is the case that actually needs attention.
+#
+#   2. github-actions is watched too. The workflows here pin actions by tag, and
+#      a stale action is a quiet supply-chain risk - the backup workflow has
+#      database credentials in scope.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Kolkata
+    commit-message:
+      prefix: "chore(ci)"
