@@ -69,7 +69,11 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-3 text-left align-middle text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+      // Column headers carry meaning, so they sit at ~5.9:1 rather than at the
+      // muted tone, which measured borderline at this size. Uppercase stays -
+      // it is the conventional treatment for a table head - but the tracking
+      // is tightened so it reads as a label rather than as shouting.
+      "h-10 px-3 text-left align-middle text-[0.7rem] font-semibold uppercase tracking-[0.06em] text-foreground/75",
       className,
     )}
     {...props}

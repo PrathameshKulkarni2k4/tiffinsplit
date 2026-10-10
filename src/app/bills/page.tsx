@@ -1,9 +1,15 @@
 import Link from "next/link";
+import { ReceiptText } from "lucide-react";
 import { getMonthOrders, getMembers, getMesses, nameMap, currentMonthLabel } from "@/lib/data";
 import { perPerson, grandTotal } from "@/lib/aggregate";
-import { money } from "@/lib/format";
+import { money, prettyMonth } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import MonthPicker from "@/components/MonthPicker";
+import ShareBar from "@/components/ShareBar";
+import Avatar from "@/components/Avatar";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -12,6 +18,8 @@ import {
 } from "@/components/ui/table";
 
 type SearchParams = { month?: string };
+
+export const metadata = { title: "Bills" };
 
 export default async function BillsPage({ searchParams }: { searchParams?: SearchParams }) {
   const month = typeof searchParams?.month === "string" ? searchParams.month : currentMonthLabel();
@@ -48,15 +56,51 @@ export default async function BillsPage({ searchParams }: { searchParams?: Searc
         <MonthPicker month={month} />
       </div>
 
-      {members.map((m) => {
+      {orders.length > 0 && (
+        <div className="mb-5">
+          <ShareBar
+            month={month}
+            monthLabel={prettyMonth(month)}
+            lines={members
+              .filter((m) => totals[m.id])
+              .map((m) => ({
+                name: names[m.id] ?? "—",
+                amount: money(totals[m.id] ?? 0),
+              }))}
+            total={money(total)}
+          />
+        </div>
+      )}
+
+      {/* A month with nothing in it used to render one empty card per member -
+          six identical "No orders this month" panels stacked down the screen,
+          which reads as a broken page. One honest empty state says more. */}
+      {orders.length === 0 && (
+        <EmptyState
+          icon={ReceiptText}
+          title={`Nothing logged for ${prettyMonth(month)}`}
+          body="Once someone logs a tiffin, everyone's share of it shows up here."
+          action={
+            <Button asChild>
+              <Link href="/today">Log a tiffin</Link>
+            </Button>
+          }
+        />
+      )}
+
+      {orders.length > 0 && members.map((m) => {
         const entries = Object.entries(matrix[m.id] ?? {});
         return (
           <Card key={m.id} className="mb-[18px] px-5 py-[18px]">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Link href={`/bills/${m.id}?month=${month}`} className="inline-block py-0.5 font-bold">
+              <Link
+                href={`/bills/${m.id}?month=${month}`}
+                className="inline-flex items-center gap-2.5 py-0.5 font-bold hover:no-underline"
+              >
+                <Avatar name={names[m.id] ?? "?"} size="sm" />
                 {names[m.id]}
               </Link>
-              <span className="font-semibold tabular-nums">{money(totals[m.id] ?? 0)}</span>
+              <span className="fig font-semibold">{money(totals[m.id] ?? 0)}</span>
             </div>
             {entries.length > 0 ? (
               <Table className="mt-1">
@@ -80,9 +124,14 @@ export default async function BillsPage({ searchParams }: { searchParams?: Searc
         );
       })}
 
-      <Card className="flex flex-wrap items-center justify-between gap-3 px-5 py-[18px]">
+      <Card
+        className={cn(
+          "flex flex-wrap items-center justify-between gap-3 px-5 py-[18px]",
+          orders.length === 0 && "hidden",
+        )}
+      >
         <strong>Group total</strong>
-        <span className="font-semibold tabular-nums">{money(total)}</span>
+        <span className="fig font-semibold">{money(total)}</span>
       </Card>
     </>
   );
