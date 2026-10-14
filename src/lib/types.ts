@@ -41,3 +41,15 @@ export type OrderWithDetails = Order & {
   messes: { name: string } | null;
   order_shares: { user_id: string; share_amount: number }[];
 };
+
+/** A payment one person made to another, attributed to a month. */
+export type Settlement = {
+  id: string;
+  from_user: string;
+  to_user: string;
+  amount: number;
+  period_month: string;
+  settled_on: string;
+  note: string | null;
+  created_at: string;
+};

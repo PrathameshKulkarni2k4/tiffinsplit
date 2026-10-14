@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AppUser, Mess, OrderWithDetails } from "@/lib/types";
+import type { AppUser, Mess, OrderWithDetails, Settlement } from "@/lib/types";
 
 /** Returns the ISO date range (first and last day) for a "YYYY-MM" month. */
 export function monthRange(month?: string) {
@@ -109,4 +109,19 @@ export function nameMap(members: AppUser[]): Record<string, string> {
   const map: Record<string, string> = {};
   for (const m of members) map[m.id] = m.full_name || m.email;
   return map;
+}
+
+/** Every settlement attributed to a "YYYY-MM" month. */
+export async function getMonthSettlements(month?: string): Promise<Settlement[]> {
+  const supabase = createClient();
+  const { label } = monthRange(month);
+  const { data, error } = await supabase
+    .from("settlements")
+    .select("id, from_user, to_user, amount, period_month, settled_on, note, created_at")
+    // period_month is always the 1st of its month, so an exact match is right
+    // and cheaper than a range.
+    .eq("period_month", `${label}-01`)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Settlement[];
 }

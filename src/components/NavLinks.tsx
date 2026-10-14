@@ -25,6 +25,7 @@ export default function NavLinks({ isAdmin }: { isAdmin: boolean }) {
   const items = [
     { href: "/orders", label: "Orders", desktopOnly: true },
     { href: "/bills", label: "Bills", desktopOnly: true },
+    { href: "/settlements", label: "Settle up", desktopOnly: true },
     { href: "/vendors", label: "Messes owed", desktopOnly: true },
     { href: "/messes", label: "Messes", desktopOnly: true },
     // Not in the bottom tab bar, so it stays reachable on a phone.

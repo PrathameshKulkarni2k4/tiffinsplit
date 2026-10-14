@@ -57,7 +57,10 @@ export default async function BillsPage({ searchParams }: { searchParams?: Searc
       </div>
 
       {orders.length > 0 && (
-        <div className="mb-5">
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/settlements?month=${month}`}>Settle up</Link>
+          </Button>
           <ShareBar
             month={month}
             monthLabel={prettyMonth(month)}

@@ -28,8 +28,9 @@ export default function FlashToast() {
     const logged = params.get("logged");
     const deleted = params.get("deleted");
     const undone = params.get("undone");
+    const settled = params.get("settled");
     const error = params.get("error");
-    if (!logged && !deleted && !undone && !error) return;
+    if (!logged && !deleted && !undone && !error && !settled) return;
 
     // One flash at a time. Clearing first means an "Undone." message also
     // removes the "Logged 3 tiffins" toast whose Undo no longer applies.
@@ -44,12 +45,13 @@ export default function FlashToast() {
     }
     if (deleted) push("Order deleted.", { variant: "info" });
     if (undone) push("Undone.", { variant: "info" });
+    if (settled) push("Marked as received.");
     if (error === "auth") {
       push("Could not sign you in. Please try again.", { variant: "error" });
     }
 
     const next = new URLSearchParams(params);
-    for (const key of ["logged", "batch", "deleted", "undone", "error"]) {
+    for (const key of ["logged", "batch", "deleted", "undone", "error", "settled"]) {
       next.delete(key);
     }
     const qs = next.toString();
