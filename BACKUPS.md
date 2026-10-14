@@ -77,9 +77,32 @@ create schema public;
 **4. Re-apply the grants.** The dump is written with `--no-owner
 --no-privileges`, so it carries the tables, the data and the Row Level Security
 policies, but **not** the `GRANT` statements that let Supabase's `anon` and
-`authenticated` roles reach the tables. Without them the app will connect and
-see nothing. Re-apply the grants from the migrations in `supabase/migrations/`,
-or from Supabase's default privileges.
+`authenticated` roles reach the tables. A freshly recreated `public` schema does
+not inherit Supabase's default privileges, so without these the app connects and
+sees nothing.
+
+This is worth spelling out rather than describing, because the failure is
+silent and misleading: nothing errors, the queries simply return no rows, so
+every user looks like they are pending approval. It is exactly what happened
+during the restore-drill incident, and it took a while to diagnose.
+
+```sql
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+```
+
+The `alter default privileges` lines matter for anything created afterwards —
+without them a new table added by a later migration would have no grants either,
+and would fail the same silent way.
+
+**A related constraint, worth knowing before you need it:** `public.users.id` has
+a foreign key to `auth.users.id`. Authentication lives per-project, so **a backup
+can only ever be restored into the project it came from.** This is why the
+restore drill cannot run against staging at all — not a limitation of the drill,
+but of the schema.
 
 ## Recovering production (emergency)
 

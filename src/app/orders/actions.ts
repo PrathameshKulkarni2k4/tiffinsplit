@@ -36,6 +36,24 @@ export async function createOrder(formData: FormData) {
     throw new Error("Select at least one person who shared the tiffin.");
   }
 
+  // Server-side duplicate guard. The form also checks this and disables the
+  // button, but that check is advisory - it can be bypassed, and it does not
+  // run at all if JavaScript fails. This is the one that holds.
+  if (String(formData.get("allow_duplicate") || "") !== "1") {
+    const { data: existing, error: dupErr } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("order_date", order_date)
+      .eq("mess_id", mess_id)
+      .limit(1);
+    if (dupErr) throw new Error(dupErr.message);
+    if (existing && existing.length > 0) {
+      throw new Error(
+        'There is already an order for that date and mess. Tick "I know - add it anyway" to log another.',
+      );
+    }
+  }
+
   const { data: order, error } = await supabase
     .from("orders")
     .insert({ order_date, mess_id, tiffin_type, unit_price, created_by: user.id, notes })
