@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DateField from "@/components/DateField";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // The app is mobile-first, so fields keep a comfortable touch height on small
 // screens and relax to the tighter desktop sizing above the 721px breakpoint.
@@ -16,7 +17,16 @@ const FIELD = "min-h-[46px] text-base md:min-h-0";
 const SELECT =
   "mt-1.5 flex min-h-[46px] w-full rounded-md border border-input bg-card px-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-0";
 
-export default function OrderForm({ messes, members }: { messes: Mess[]; members: AppUser[] }) {
+export default function OrderForm({
+  messes,
+  members,
+  loggedKeys,
+}: {
+  messes: Mess[];
+  members: AppUser[];
+  /** "date|messId" for orders that already exist, for the duplicate guard. */
+  loggedKeys: string[];
+}) {
   const [messId, setMessId] = useState(messes[0]?.id ?? "");
   const [orderDate, setOrderDate] = useState(
     () => new Date().toISOString().slice(0, 10),
@@ -24,6 +34,14 @@ export default function OrderForm({ messes, members }: { messes: Mess[]; members
   const [type, setType] = useState<"full" | "half">("full");
   const [price, setPrice] = useState<string>(String(messes[0]?.full_price ?? ""));
   const [selected, setSelected] = useState<string[]>(members.map((m) => m.id));
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
+
+  // The same guard the Today screen has had all along. This form predates it
+  // and was never given one, so the same person could be logged twice for one
+  // day through one screen and not the other - which produced a bill that was
+  // quietly wrong rather than visibly broken.
+  const hasClash = loggedKeys.includes(`${orderDate}|${messId}`);
+  const blocked = hasClash && !allowDuplicate;
 
   // Pre-fill the price from the mess whenever the mess or portion changes.
   useEffect(() => {
@@ -125,7 +143,36 @@ export default function OrderForm({ messes, members }: { messes: Mess[]; members
           <Input type="text" name="notes" placeholder="optional" className={FIELD} />
         </Label>
 
-        <Button type="submit" disabled={n === 0} className="w-full max-md:min-h-[46px]">
+        {hasClash && (
+          <Alert variant="warning" className="mb-3">
+            <AlertTitle>Already logged for that date and mess.</AlertTitle>
+            <AlertDescription>
+              <div className="mt-2 flex min-h-[46px] items-center gap-2.5 font-semibold">
+                <Checkbox
+                  id="allow-duplicate"
+                  checked={allowDuplicate}
+                  onCheckedChange={(v) => setAllowDuplicate(v === true)}
+                />
+                <label
+                  htmlFor="allow-duplicate"
+                  className="flex flex-1 cursor-pointer items-center self-stretch font-normal"
+                >
+                  I know — add it anyway
+                </label>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* The server reads this, so the guard holds even if the button is
+            bypassed or JavaScript never ran. */}
+        {allowDuplicate && <input type="hidden" name="allow_duplicate" value="1" />}
+
+        <Button
+          type="submit"
+          disabled={n === 0 || blocked}
+          className="w-full max-md:min-h-[46px]"
+        >
           Save order
         </Button>
       </form>
