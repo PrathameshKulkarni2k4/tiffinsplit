@@ -1,12 +1,16 @@
 import Link from "next/link";
-import { getMesses, getMembers } from "@/lib/data";
+import { getMesses, getMembers, getLoggedKeys } from "@/lib/data";
 import OrderForm from "../OrderForm";
 import { Card } from "@/components/ui/card";
 
 export const metadata = { title: "Log a tiffin" };
 
 export default async function NewOrderPage() {
-  const [messes, members] = await Promise.all([getMesses(true), getMembers()]);
+  const [messes, members, loggedKeys] = await Promise.all([
+    getMesses(true),
+    getMembers(),
+    getLoggedKeys(),
+  ]);
 
   if (messes.length === 0) {
     return (
@@ -24,7 +28,7 @@ export default async function NewOrderPage() {
       <p className="mb-5 text-muted-foreground">
         Pick the mess, the portion, the price, and who shared it.
       </p>
-      <OrderForm messes={messes} members={members} />
+      <OrderForm messes={messes} members={members} loggedKeys={loggedKeys} />
     </>
   );
 }
