@@ -28,8 +28,20 @@ type SearchParams = { month?: string; q?: string };
 const DELETE_CLASS =
   "border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive";
 
-function Portion({ type }: { type: string }) {
-  return <Badge variant={type === "half" ? "warn" : "secondary"}>{type}</Badge>;
+function Portion({ order }: { order: { tiffin_type: string; full_qty: number | null; half_qty: number | null } }) {
+  // A mixed order says what was in it. "mixed" alone would be true and useless -
+  // the question anyone asks about it is "how many of each".
+  if (order.tiffin_type === "mixed") {
+    const parts: string[] = [];
+    if (order.full_qty) parts.push(`${order.full_qty} full`);
+    if (order.half_qty) parts.push(`${order.half_qty} half`);
+    return <Badge variant="secondary">{parts.join(" + ") || "mixed"}</Badge>;
+  }
+  return (
+    <Badge variant={order.tiffin_type === "half" ? "warn" : "secondary"}>
+      {order.tiffin_type}
+    </Badge>
+  );
 }
 
 export default async function OrdersPage({ searchParams }: { searchParams?: SearchParams }) {
@@ -141,7 +153,7 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
                     <TableCell>{prettyDate(o.order_date)}</TableCell>
                     <TableCell>{o.messes?.name ?? "—"}</TableCell>
                     <TableCell>
-                      <Portion type={o.tiffin_type} />
+                      <Portion order={o} />
                     </TableCell>
                     <TableCell className="text-right font-semibold tabular-nums">
                       {money(o.unit_price)}
@@ -181,7 +193,7 @@ export default async function OrdersPage({ searchParams }: { searchParams?: Sear
               <Card key={o.id} className="mb-[18px] px-4 py-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-muted-foreground">{prettyDate(o.order_date)}</span>
-                  <Portion type={o.tiffin_type} />
+                  <Portion order={o} />
                   <span className="fig font-semibold">{money(o.unit_price)}</span>
                 </div>
                 <div className="mt-1.5 font-semibold">{o.messes?.name ?? "—"}</div>

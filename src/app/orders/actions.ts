@@ -22,12 +22,17 @@ export async function createOrder(formData: FormData) {
   const order_date = String(formData.get("order_date") || "");
   const mess_id = String(formData.get("mess_id") || "");
   const tiffin_type = String(formData.get("tiffin_type") || "");
+  const full_qty = tiffin_type === "mixed" ? Number(formData.get("full_qty") || 0) : null;
+  const half_qty = tiffin_type === "mixed" ? Number(formData.get("half_qty") || 0) : null;
   const unit_price = Number(formData.get("unit_price"));
   const notes = String(formData.get("notes") || "") || null;
   const sharerIds = formData.getAll("sharers").map((s) => String(s));
 
-  if (!order_date || !mess_id || (tiffin_type !== "full" && tiffin_type !== "half")) {
+  if (!order_date || !mess_id || !["full", "half", "mixed"].includes(tiffin_type)) {
     throw new Error("Please choose a date, a mess and a portion.");
+  }
+  if (tiffin_type === "mixed" && (full_qty ?? 0) + (half_qty ?? 0) <= 0) {
+    throw new Error("A mixed order needs at least one full or half tiffin.");
   }
   if (!Number.isFinite(unit_price) || unit_price < 0) {
     throw new Error("Please enter a valid price.");
@@ -56,7 +61,16 @@ export async function createOrder(formData: FormData) {
 
   const { data: order, error } = await supabase
     .from("orders")
-    .insert({ order_date, mess_id, tiffin_type, unit_price, created_by: user.id, notes })
+    .insert({
+      order_date,
+      mess_id,
+      tiffin_type,
+      unit_price,
+      full_qty,
+      half_qty,
+      created_by: user.id,
+      notes,
+    })
     .select("id")
     .single();
   if (error) throw new Error(error.message);

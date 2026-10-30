@@ -41,7 +41,16 @@ export async function GET(request: Request) {
         [
           o.order_date,
           csvCell(o.messes?.name ?? ""),
-          o.tiffin_type,
+          // A mixed order carries its composition, so the spreadsheet says what
+          // was bought rather than the word "mixed".
+          o.tiffin_type === "mixed"
+            ? [
+                o.full_qty ? `${o.full_qty} full` : null,
+                o.half_qty ? `${o.half_qty} half` : null,
+              ]
+                .filter(Boolean)
+                .join(" + ") || "mixed"
+            : o.tiffin_type,
           Number(o.unit_price).toFixed(2),
           csvCell(names[s.user_id] ?? s.user_id),
           Number(s.share_amount).toFixed(2),
