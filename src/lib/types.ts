@@ -1,5 +1,5 @@
 export type Role = "member" | "admin";
-export type TiffinType = "full" | "half";
+export type TiffinType = "full" | "half" | "mixed";
 
 export type AppUser = {
   id: string;
@@ -24,6 +24,9 @@ export type Order = {
   mess_id: string;
   tiffin_type: TiffinType;
   unit_price: number;
+  /** Set only on mixed orders: how many of each went into the basket. */
+  full_qty: number | null;
+  half_qty: number | null;
   created_by: string;
   notes: string | null;
   created_at: string;

@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DateField from "@/components/DateField";
+import { basketPrice } from "@/lib/basket";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // The app is mobile-first, so fields keep a comfortable touch height on small
@@ -31,7 +32,10 @@ export default function OrderForm({
   const [orderDate, setOrderDate] = useState(
     () => new Date().toISOString().slice(0, 10),
   );
-  const [type, setType] = useState<"full" | "half">("full");
+  const [type, setType] = useState<"full" | "half" | "mixed">("full");
+  // Only meaningful for a mixed order: how many of each go into the basket.
+  const [fullQty, setFullQty] = useState(1);
+  const [halfQty, setHalfQty] = useState(1);
   const [price, setPrice] = useState<string>(String(messes[0]?.full_price ?? ""));
   const [selected, setSelected] = useState<string[]>(members.map((m) => m.id));
   const [allowDuplicate, setAllowDuplicate] = useState(false);
@@ -46,8 +50,16 @@ export default function OrderForm({
   // Pre-fill the price from the mess whenever the mess or portion changes.
   useEffect(() => {
     const mess = messes.find((m) => m.id === messId);
-    if (mess) setPrice(String(type === "full" ? mess.full_price : mess.half_price));
-  }, [messId, type, messes]);
+    if (!mess) return;
+    if (type === "mixed") {
+      // Priced from the mess's current prices at the moment it is logged. An
+      // old order keeps whatever it was logged at - the snapshot rule is
+      // unchanged, and this does not reach backwards.
+      setPrice(String(basketPrice(fullQty, halfQty, mess)));
+      return;
+    }
+    setPrice(String(type === "full" ? mess.full_price : mess.half_price));
+  }, [messId, type, messes, fullQty, halfQty]);
 
   const n = selected.length;
   const each = n > 0 ? Number(price) / n : 0;
@@ -86,13 +98,49 @@ export default function OrderForm({
           <select
             name="tiffin_type"
             value={type}
-            onChange={(e) => setType(e.target.value as "full" | "half")}
+            onChange={(e) => setType(e.target.value as "full" | "half" | "mixed")}
             className={SELECT}
           >
             <option value="full">Full</option>
             <option value="half">Half</option>
+            <option value="mixed">Mixed — fulls and halves</option>
           </select>
         </Label>
+
+        {type === "mixed" && (
+          <div className="mb-3 grid grid-cols-2 gap-3">
+            <Label className="block font-semibold">
+              Fulls
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                name="full_qty"
+                value={fullQty}
+                onChange={(e) => setFullQty(Math.max(0, Number(e.target.value) || 0))}
+                className={FIELD}
+              />
+            </Label>
+            <Label className="block font-semibold">
+              Halves
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                name="half_qty"
+                value={halfQty}
+                onChange={(e) => setHalfQty(Math.max(0, Number(e.target.value) || 0))}
+                className={FIELD}
+              />
+            </Label>
+            <p className="col-span-2 -mt-1 text-sm text-muted-foreground">
+              The price below is filled in from these and the mess&apos;s prices.
+              You can still change it if you were charged something else.
+            </p>
+          </div>
+        )}
 
         <Label className="mb-3 block font-semibold">
           Price (₹)

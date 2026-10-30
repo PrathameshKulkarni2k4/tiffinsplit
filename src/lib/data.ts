@@ -42,7 +42,7 @@ export async function getMonthOrders(month?: string): Promise<OrderWithDetails[]
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, order_date, mess_id, tiffin_type, unit_price, created_by, notes, created_at, messes(name), order_shares(user_id, share_amount)"
+      "id, order_date, mess_id, tiffin_type, unit_price, full_qty, half_qty, created_by, notes, created_at, messes(name), order_shares(user_id, share_amount)"
     )
     .gte("order_date", start)
     .lte("order_date", end)
