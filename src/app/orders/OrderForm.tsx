@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DateField from "@/components/DateField";
+import { basketPrice } from "@/lib/basket";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // The app is mobile-first, so fields keep a comfortable touch height on small
@@ -54,7 +55,7 @@ export default function OrderForm({
       // Priced from the mess's current prices at the moment it is logged. An
       // old order keeps whatever it was logged at - the snapshot rule is
       // unchanged, and this does not reach backwards.
-      setPrice(String(fullQty * mess.full_price + halfQty * mess.half_price));
+      setPrice(String(basketPrice(fullQty, halfQty, mess)));
       return;
     }
     setPrice(String(type === "full" ? mess.full_price : mess.half_price));
